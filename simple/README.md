@@ -1,3 +1,1 @@
-Simple tempalted which sents message to itself 
-and print incomming messages at div
-
+Simple template which sent message to itself and print incoming messages at div.
