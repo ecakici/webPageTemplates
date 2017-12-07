@@ -1,0 +1,93 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+     <script>
+        var deviceId=####deviceId#;
+        var raspberryPiDeviceId=####raspberryPiDevice#;
+    </script>
+    <script src="adapter.js"></script>
+    <script src="gamepad.js"></script>
+    <script src="remotemeUtils.js"></script>
+    <script src="script.js"></script>
+    <script src="setup.js"></script>
+    <script src="common.js"></script>
+
+      <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+
+<body>
+
+
+<div class='belt-status'>
+    <div id='websocketState' >Web Socket</div>
+    <div id='webrtcState'>Web RTC</div>
+</div>
+<br/>
+<button onclick=sendMessageButtonClick() >send message </button>
+
+<button onclick='sendBinaryMessage()'>send binary</button>
+
+
+
+
+
+
+
+
+<div id="container" style="width:100%;height:100%">
+
+
+    <video id="remoteVideo" autoplay="autoplay" style="float:left;width:500px;height:500px"></video>
+
+    <div style="float:left;width:calc(400px - 2em); height:100%;padding-left:1em">
+        <div id="steering" class="dotContainer">
+            <div></div>
+            <span></span>
+        </div>
+        <div id="steeringA" class="progressContainer">
+            <div style="width:25%" ></div>
+        </div>
+
+        <div class="dotContainer" id="camera">
+            <div></div>
+            <span></span>
+        </div>
+        <div id="cameraA" class="progressContainer">
+            <div style="width:25%" ></div>
+        </div>
+
+    </div>
+    <div style="clear: both;"></div>
+    <div>
+
+        <button id="register">Register</button>
+        <button id="disconnect">Disconnect</button>
+        <button id="webrtcSend">Send something to webrtc</button>
+        <button id="websocketSend">Send something to websocket</button>
+
+        <br/>
+        <button class='lights' id="lightsOff">lights Off</button>
+        <button class='lights' id="lightsOn">lights On</button>
+        <button class='lights' id="lightsRider">lights Rider</button>
+        <button class='lights' id="lightsPolice">lights Police</button>
+        <button class='lights' id="lightsBlinkerL">lights blinker left</button>
+        <button class='lights' id="lightsBlinkerR">lights blinker right</button>
+
+        <div id="mouseOutput">mo</div>
+        <div id="keysOutput">mo</div>
+        <div id="gamepadDisplay">mo</div>
+    </div>
+
+
+    <div class="logContainer" style="width:500px; height:500px; position:fixed;right:0px;top:0px; border:1px solid gray"></div>
+
+</div>
+
+
+
+
+
+
+
+</body>
+</html>
