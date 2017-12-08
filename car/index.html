@@ -1,16 +1,13 @@
 <html>
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-     <script>
-        var deviceId=####deviceId#;
-        var raspberryPiDeviceId=####raspberryPiDevice#;
-    </script>
+
     <script src="adapter.js"></script>
     <script src="gamepad.js"></script>
     <script src="remotemeUtils.js"></script>
     <script src="script.js"></script>
     <script src="setup.js"></script>
-    <script src="common.js"></script>
+
 
       <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
@@ -23,18 +20,11 @@
     <div id='webrtcState'>Web RTC</div>
 </div>
 <br/>
-<button onclick=sendMessageButtonClick() >send message </button>
-
-<button onclick='sendBinaryMessage()'>send binary</button>
+<button onclick=someClick() > click </button>
 
 
 
-
-
-
-
-
-<div id="container" style="width:100%;height:100%">
+<div id="container" style="width:100%;height:650px">
 
 
     <video id="remoteVideo" autoplay="autoplay" style="float:left;width:500px;height:500px"></video>
@@ -63,7 +53,7 @@
         <button id="register">Register</button>
         <button id="disconnect">Disconnect</button>
         <button id="webrtcSend">Send something to webrtc</button>
-        <button id="websocketSend">Send something to websocket</button>
+
 
         <br/>
         <button class='lights' id="lightsOff">lights Off</button>
@@ -79,14 +69,7 @@
     </div>
 
 
-    <div class="logContainer" style="width:500px; height:500px; position:fixed;right:0px;top:0px; border:1px solid gray"></div>
-
 </div>
-
-
-
-
-
 
 
 </body>

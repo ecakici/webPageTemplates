@@ -34,14 +34,10 @@ $( document ).ready(function() {
     });
 
     $(document).keydown( function( event ) {
-
-
         $( "#keysOutput" ).html( "key down"+event.which );
     });
 
     $(document).keyup( function( event ) {
-
-
         $( "#keysOutput" ).html( "key up"+event.which );
     });
     $(document).focusout( function( event ) {
@@ -71,30 +67,14 @@ $( document ).ready(function() {
 
 
 
-    $("#websocketSend").click(function (event){
-
-
-        var ab =new Uint8Array(20);
-        for(i=2;i<20;i++){
-            ab[i]=51+i;
-        }
-
-        ab[0]=3;
-        ab[1]=0;
-        webSocket.send(ab);
-        // WebSocketSend(JSON.stringify(message));
-    });
 
 
     $("#register").click(function (event){
-
         doRegister();
     });
     $("#disconnect").click(function (event){
-
         doDisconnect();
     });
-
 
     drawProgress("#steeringA",steeringA);
     drawProgress("#cameraA",cameraA);

@@ -1,4 +1,5 @@
 var webSocket;
+var thisDeviceId='####deviceId#';
 
 function getWSUrl(){
     var ret;
@@ -57,7 +58,7 @@ function sendMessage(typeId,renevalWhenFailTypeId,receiveDeviceId,messageId,data
     bytearray[0]=typeId;
     bytearray[1]=renevalWhenFailTypeId;
     writeShort(bytearray,2,receiveDeviceId);
-    writeShort(bytearray,4,####deviceId#);
+    writeShort(bytearray,4,thisDeviceId);
     writeShort(bytearray,6,messageId);
     writeShort(bytearray,8,data.length);
     writeArray(bytearray,10,data);

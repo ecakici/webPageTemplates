@@ -1,4 +1,75 @@
-var webSocket;
+
+var deviceId='####deviceId#';
+var raspberryPiDeviceId='####raspberryPiDevice#';
+
+
+
+function log(text) {
+    var now = (window.performance.now() / 1000).toFixed(3);
+    console.log(now + ': ', text);
+}
+function logTrace(text) {
+    var now = (window.performance.now() / 1000).toFixed(3);
+    console.debug(now + ': ', text);
+}
+
+
+//---------------- MESSAGES
+
+
+function sendWebSocket(bytearray){
+    if (webSocket!=undefined){
+        webSocket.send(bytearray.buffer)
+    }else{
+        log("websocket is not opened")
+    }
+}
+
+function sendWebRtc(bytearray){
+    if (openedChanel!=undefined){
+        openedChanel.send(bytearray.buffer)
+    }else{
+        log("webrtc channels is not opened")
+    }
+
+}
+
+
+function getUserMessage(typeId, renevalWhenFailTypeId, receiveDeviceId, messageId, data) {
+
+    if (typeof data === 'string' || data instanceof String){
+        data=Array.from(new TextEncoder("utf-8").encode(data));
+    }
+
+    var bytearray = new Uint8Array(1*2+4*2+data.length);
+    bytearray[0]=typeId;
+    bytearray[1]=renevalWhenFailTypeId;
+    writeShort(bytearray,2,receiveDeviceId);
+    writeShort(bytearray,4,deviceId);
+    writeShort(bytearray,6,messageId);
+    writeShort(bytearray,8,data.length);
+    writeArray(bytearray,10,data);
+
+    logDebug(bytearray);
+
+};
+
+
+
+//----------------Messages end
+
+
+function writeShort(bytearray,pos,num){
+    bytearray[pos]=(num & 0xff00) >> 8;
+    bytearray[pos+1]=(num & 0xff) ;
+}
+function writeArray(bytearray,pos,array){
+    for(var i=0;i<array.length;i++){
+        bytearray[i+pos]=array[i]
+    }
+}
+
+
 
 function getWSUrl() {
     var ret;
@@ -11,6 +82,7 @@ function getWSUrl() {
     return ret;
 
 }
+var webSocket;
 
 function connectWS() {
     log("connectiong WS");
@@ -18,11 +90,11 @@ function connectWS() {
     webSocket.binaryType = "arraybuffer";
     webSocket.onopen = onOpenWS;
     webSocket.onmessage = onMessageWS;
-    webSocket.onerror = onError;
+    webSocket.onerror = onErrorWS;
     webSocket.onclose = onCloseWS;
 
 }
-function onError(event) {
+function onErrorWS(event) {
     log("on error");
     $("#websocketState").css("background-color", "#AA0000");
 };
@@ -86,20 +158,11 @@ function onMessageWS(event) {
 
 
 
-function sendMessageButtonClick() {
-    sendMessage(1, 0, 34, 123, [1, 2, 3, 4, 5]);
-
-}
-
-function log(text) {
-    $(".logContainer").append(text + "<br/>");
-
-}
 
 
 function sendBinaryMessage() {
     var http = new XMLHttpRequest();
-    var url = "http://127.0.0.1:8082/api/~1_ySKpyx+'G23/rest/v1/sender/sendMessage/";
+    var url = "http://127.0.0.1:8082/api/~1_ySKpyx+'G23/rest/v1/sender/getUserMessage/";
     http.open("POST", url, true);
 
     http.setRequestHeader("Content-type", "text/plain");
@@ -198,7 +261,7 @@ function createPeerConnection() {
                 };
                 doSend(JSON.stringify(candidate));
             } else {
-                trace("End of candidates.");
+                logTrace("End of candidates.");
             }
         };
         peerConnection.onconnecting = onSessionConnecting;
@@ -207,7 +270,7 @@ function createPeerConnection() {
         peerConnection.onremovestream = onRemoteStreamRemoved;
         peerConnection.ondatachannel =onDataChannel;
 
-        trace("Created RTCPeerConnnection with config: " + JSON.stringify(pcConfig));
+        logTrace("Created RTCPeerConnnection with config: " + JSON.stringify(pcConfig));
 
 
 }
@@ -216,7 +279,7 @@ function createPeerConnection() {
 function onDataChannel(event){
     openedChanel=event.channel;
 
-    trace("on data channel "+event.channel.label);
+    logTrace("on data channel "+event.channel.label);
     event.channel.onopen = function() {
         console.log('Data channel is open and ready to be used.');
     };
@@ -226,74 +289,74 @@ function onDataChannel(event){
 }
 
 function onRemoteStreamAdded(event) {
-    trace("Remote stream added:", event.streams );
+    logTrace("Remote stream added:", event.streams );
     var remoteVideoElement = document.getElementById('remoteVideo');
     remoteVideo.srcObject = event.streams[0];
 }
 
 function sld_success_cb() {
-    trace("setLocalDescription success");
+    logTrace("setLocalDescription success");
 }
 
 function sld_failure_cb() {
-    trace("setLocalDescription failed");
+    logTrace("setLocalDescription failed");
 }
 
 function aic_success_cb() {
-    trace("addIceCandidate success");
+    logTrace("addIceCandidate success");
 }
 
 function aic_failure_cb(x) {
-    trace("addIceCandidate failed",x);
+    logTrace("addIceCandidate failed",x);
 }
 
 
 function doHandlePeerMessage(data) {
     ++messageCounter;
     var dataJson = JSON.parse(data);
-    trace("Handle Message :", JSON.stringify(dataJson));
+    logTrace("Handle Message :", JSON.stringify(dataJson));
 
 
 
     if (dataJson["type"] == "offer" ) {        // Processing offer
-        trace("Offer from PeerConnection" );
+        logTrace("Offer from PeerConnection" );
         var sdp_returned = forceChosenVideoCodec(dataJson.sdp, 'H264/90000');
         dataJson.sdp = sdp_returned;
         // Creating PeerConnection
         createPeerConnection();
         peerConnection.setRemoteDescription(new RTCSessionDescription(dataJson), onRemoteSdpSucces, onRemoteSdpError);
         peerConnection.createAnswer(function(sessionDescription) {
-            trace("Create answer:", sessionDescription);
+            logTrace("Create answer:", sessionDescription);
             peerConnection.setLocalDescription(sessionDescription,sld_success_cb,sld_failure_cb);
             var data = JSON.stringify(sessionDescription);
-            trace("Sending Answer: " + data );
+            logTrace("Sending Answer: " + data );
             doSend(data);
         }, function(error) { // error
-            trace("Create answer error:", error);
+            logTrace("Create answer error:", error);
         }, mediaConstraints); // type error
     }
     else if (dataJson["type"] == "candidate" ) {    // Processing candidate
-        trace("Adding ICE candiate " + dataJson["candidate"]);
+        logTrace("Adding ICE candiate " + dataJson["candidate"]);
 
             var candidate = new RTCIceCandidate({sdpMLineIndex: dataJson.label, candidate: dataJson.candidate});
             peerConnection.addIceCandidate(candidate, aic_success_cb, aic_failure_cb);
 
-            trace("sdpMLineIndex is null >>>>>> "+dataJson.sdpMLineIndex);
+            logTrace("sdpMLineIndex is null >>>>>> "+dataJson.sdpMLineIndex);
 
 
     }
 }
 
 function onSessionConnecting(message) {
-    trace("Session connecting.");
+    logTrace("Session connecting.");
 }
 
 function onSessionOpened(message) {
-    trace("Session opened.");
+    logTrace("Session opened.");
 }
 
 function onRemoteStreamRemoved(event) {
-    trace("Remote stream removed.");
+    logTrace("Remote stream removed.");
 }
 
 function onRemoteSdpError(event) {
@@ -301,7 +364,7 @@ function onRemoteSdpError(event) {
 }
 
 function onRemoteSdpSucces() {
-    trace('onRemoteSdpSucces');
+    logTrace('onRemoteSdpSucces');
 }
 
 
@@ -320,26 +383,26 @@ function forceChosenAudioCodec(sdp, codec) {
 function maybePreferCodec(sdp, type, dir, codec) {
     var str = type + ' ' + dir + ' codec';
     if (codec === '') {
-        trace('No preference on ' + str + '.');
+        logTrace('No preference on ' + str + '.');
         return sdp;
     }
 
-    trace('Prefer ' + str + ': ' + codec);	// kclyu
+    logTrace('Prefer ' + str + ': ' + codec);	// kclyu
 
     var sdpLines = sdp.split('\r\n');
 
     // Search for m line.
     var mLineIndex = findLine(sdpLines, 'm=', type);
     if (mLineIndex === null) {
-        trace('* not found error: ' + str + ': ' + codec );	// kclyu
+        logTrace('* not found error: ' + str + ': ' + codec );	// kclyu
         return sdp;
     }
 
     // If the codec is available, set it as the default in m line.
     var codecIndex = findLine(sdpLines, 'a=rtpmap', codec);
-    trace('mLineIndex Line: ' +  sdpLines[mLineIndex] );
-    trace('found Prefered Codec in : ' + codecIndex + ': ' + sdpLines[codecIndex] );
-    trace('codecIndex', codecIndex);
+    logTrace('mLineIndex Line: ' +  sdpLines[mLineIndex] );
+    logTrace('found Prefered Codec in : ' + codecIndex + ': ' + sdpLines[codecIndex] );
+    logTrace('codecIndex', codecIndex);
     if (codecIndex) {
         var payload = getCodecPayloadType(sdpLines[codecIndex]);
         if (payload) {
@@ -350,7 +413,7 @@ function maybePreferCodec(sdp, type, dir, codec) {
 
     // delete id 100(VP8) and 101(VP8)
 
-    trace('** Modified LineIndex Line: ' +  sdpLines[mLineIndex] );
+    logTrace('** Modified LineIndex Line: ' +  sdpLines[mLineIndex] );
     sdp = sdpLines.join('\r\n');
     return sdp;
 }
@@ -433,7 +496,7 @@ function RemoveLineInRange(sdpLines, startLine, endLine, prefix, substr) {
             if (!substr ||
                 sdpLines[i].toLowerCase().indexOf(substr.toLowerCase()) !== -1) {
                 var str = "Deleting(index: " + i + ") : " + sdpLines[i];
-                trace(str);
+                logTrace(str);
                 sdpLines.splice(i, 1);
                 return true;
             }

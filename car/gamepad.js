@@ -60,8 +60,6 @@ var leftRight = new KeysSupport(4,4);
 
 
 
-
-
 function disconnecthandler(e) {
     console.log('gamepad disconnected');
 }
@@ -141,8 +139,7 @@ function reportOnGamepad() {
             if (i!=20) {//20 is the same as button 8
                 if (prevState[i] != currentState[i]) {
 
-
-                    onButtonChange(i,currentState[i]);
+                       onButtonChange(i,currentState[i]);
 
 
                 }
