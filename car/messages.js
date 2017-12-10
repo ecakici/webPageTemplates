@@ -1,5 +1,4 @@
 
-
 MessageType = { USER_MESSAGE :  100, USER_MESSAGE_DELIVER_STATUS :  101,SYNC_MESSAGE: 120,SYNC_RESPONSE_MESSAGE: 121, WEBRTC_MESSAGE: 150, REGISTER_DEVICE :  200, REGISTER_CHILD_DEVICE :  201, ADD_DATA :  300, LOG: 20000};
 WSUserMessageSettings = { NO_RENEWAL: 0, RENEWAL_IF_FAILED: 1};
 AddDataMessageSetting = { NO_ROUND :  0, _1S :  1, _2S :  2, _5S :  3, _10S :  4, _15S :  5, _20S :  6, _30S :  7 };
@@ -17,12 +16,12 @@ function sendWebSocket(bytearray){
     if (webSocket!=undefined){
         webSocket.send(bytearray.buffer)
     }else{
-        log("websocket is not opened")
+        log("websocket is not opened");
     }
 }
 
 function sendWebRtc(bytearray){
-    if (openedChanel!=undefined){
+    if (openedChanel){
         openedChanel.send(bytearray.buffer)
     }else{
         log("webrtc channels is not opened")

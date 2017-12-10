@@ -269,20 +269,20 @@ function sendSteeringY(){
         type=1;
     }
     tosent=Math.round(tosent*255);
-    console.info("sending steering Y %d ",tosent);
+ //   console.info("sending steering Y %d ",tosent);
     sendCoordinates(type,tosent);
 }
 
 function sendSteeringX(){
     var tosent=Math.round(210+steeringX*80);
-    console.info("sending steering X %d",tosent);
+   // console.info("sending steering X %d",tosent);
     sendCoordinates(5,tosent/2);
 
 }
 
 function sendCameraY(){
     var tosent=Math.round(250-cameraY*140);
-    console.info("sending camera Y %d",tosent);
+  //  console.info("sending camera Y %d",tosent);
     sendCoordinates(3,tosent/2);
 }
 
@@ -290,7 +290,7 @@ function sendCameraX(){
     //150 = odchylenie
     //310 srodek
     var tosent=Math.round(310-cameraX*150);
-    console.info(" cameraX %f sending %d",cameraX,tosent);
+  //  console.info(" cameraX %f sending %d",cameraX,tosent);
     sendCoordinates(4,tosent/2);
 }
 
@@ -302,11 +302,9 @@ function sendCoordinates(type,value){
     ab[1]=0;
     ab[2]=type;
     ab[3]=Math.abs(value);
-    console.info("sending ",ab);
+
     if (openedChanel!=undefined){
     //    openedChanel.send(ab); //TODO uncoment
-    }else{
-        console.log("cannot sent no open channel");
     }
 }
 

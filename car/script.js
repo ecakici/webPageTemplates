@@ -181,6 +181,7 @@ function doDisconnect() {
 }
 
 //PEER conenction
+var openedChanel=undefined;
 var messageCounter = 0;
 var peerConnection;
 var pcConfig = {"iceServers": [{"urls": "stun:stun.l.google.com:19302"}]};
