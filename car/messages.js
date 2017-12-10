@@ -78,7 +78,7 @@ function getLogMessage(level,data){
     return ret;
 }
 
-//getAndroidMessage(123,"some title","body something","#009900",AndroidMessageSound.DEFAULT_SOUND,AndroidMessageIcon.BUNNY_ICON);
+//getAndroidMessage(128,"some title","body something","#009900",AndroidMessageSound.DEFAULT_SOUND,AndroidMessageIcon.BUNNY_ICON);
 function getAndroidMessage(receivedeviceId,title,body,color,sound,icon){
     size=stringToByteArray(title).length+1;
     size+=stringToByteArray(body).length+1;
@@ -168,7 +168,7 @@ function putString(bytearray, pos, text){
     }
 
     for(var i=0;i<text.length;i++){
-        bytearray[pos++]=array[i]
+        bytearray[pos++]=text[i]
     }
     bytearray[pos++]=0;
     return pos;
@@ -187,9 +187,8 @@ function stringToByteArray(text){
 
 function parseHexString(str) {
     var result = [];
-    while (str.length >= 8) {
-        result.push(parseInt(str.substring(0, 8), 16));
-        str = str.substring(8, str.length);
+   for(i=0;i<str.length;i+=2){
+        result.push(parseInt(str.substring(i, i+2), 16));
     }
     return result;
 }

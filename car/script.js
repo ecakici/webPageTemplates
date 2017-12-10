@@ -1,7 +1,7 @@
 
 var deviceId='####deviceId#';
-var raspberryPiDeviceId='####raspberryPiDevice#';
-
+var raspberryPiDeviceId='####raspberryPiDeviceId#';
+var androidDeviceId='####androidDeviceId#';
 
 
 function log(text) {
