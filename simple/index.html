@@ -1,21 +1,40 @@
 <html>
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-     <script>
-        var deviceId=####deviceId#;
+
+    <script>
+
+		var thisDeviceId=####deviceId#;
+		var raspberryPiDeviceId=####raspberryPiDeviceId#;
+
+
     </script>
-    <script src="script.js"></script>
-   
+    <script src="blinkingLed.js"></script>
+    <script src="remoteme.js"></script>
+    <script src="messages.js"></script>
+    <script src="adapter.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 
 <body>
-Cześć <b>Maciek</b> :) 
-<br/>
-<button onclick=sendMessageButtonClick() >send message </button>
 
+<div id="websocketState" class="chips">Websocket</div>
+<div id="webRTCState" class="chips">Webrtc</div>
+
+
+<div style="clear:both"></div>
+
+
+<div class="led" ledId=0 onclick="onLedClick(this)"></div>
+<div class="led" ledId=1 onclick="onLedClick(this)"></div>
+
+
+<div style="clear:both"></div>
+
+<input type="checkbox"  id="useWebRtc"> use webrtc to send led states </input>
 <div class="logContainer"/>
 <script>
-connectWS();
+	remoteMeStart(true);
 </script>
 </body>
 </html>

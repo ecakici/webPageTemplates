@@ -1,7 +1,5 @@
 
-var deviceId='####deviceId#';
-var raspberryPiDeviceId='####raspberryPiDeviceId#';
-var androidDeviceId='####androidDeviceId#';
+
 
 
 function log(text) {
@@ -22,7 +20,7 @@ function getWSUrl() {
     } else {
         ret = "ws://";
     }
-    ret += window.location.host + "/api/ws/v1/" + deviceId;
+    ret += window.location.host + "/api/ws/v1/" + thisDeviceId;
     return ret;
 
 }

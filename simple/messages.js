@@ -32,7 +32,7 @@ function sendWebRtc(bytearray){
 
 //getUserMessage(WSUserMessageSettings.NO_RENEWAL,1234,12,[1,2,3,4,5,6]);
 //getUserMessage(WSUserMessageSettings.NO_RENEWAL,1234,12,"remotemMe some text");
-function getUserMessage( userMessageSettings, receiverDeviceId, messageId, data) {
+function getUserMessage( userMessageSettings, receiverDeviceId,senderDeviceId, messageId, data) {
 
     if (typeof data === 'string' || data instanceof String){
         data=stringToByteArray(data);
@@ -48,7 +48,7 @@ function getUserMessage( userMessageSettings, receiverDeviceId, messageId, data)
     pos=putShort(ret,pos,size);
     pos=putByte(ret,pos,userMessageSettings);
     pos=putShort(ret,pos,receiverDeviceId);
-    pos=putShort(ret,pos,thisDeviceId);
+    pos=putShort(ret,pos,senderDeviceId);
     pos=putShort(ret,pos,messageId);
     pos=putArray(ret,pos,data);
 
