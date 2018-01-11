@@ -9,7 +9,17 @@
 
 
     </script>
-    <script src="blinkingLed.js"></script>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>jQuery UI Slider - Default functionality</title>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="/resources/demos/style.css">
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+
+    <script src="script.js"></script>
     <script src="remoteme.js"></script>
     <script src="messages.js"></script>
     <script src="adapter.js"></script>
@@ -25,15 +35,40 @@
 <div style="clear:both"></div>
 
 
-<div class="led" ledId=0 onclick="onLedClick(this)"></div>
-<div class="led" ledId=1 onclick="onLedClick(this)"></div>
-
-
 <div style="clear:both"></div>
 
+
+<html lang="en">
+<head>
+
+</head>
+<body>
+
+<div class="sliderContainer servo"  servoId="0">
+    <input class="spinner" value="0" disabled/>
+    <div  class="slider"></div>
+    <div style="clear:both"></div>
+</div>
+
+<div class="sliderContainer servo"  servoId="1">
+    <input class="spinner" value="0" disabled   />
+    <div  class="slider"></div>
+    <div style="clear:both"></div>
+</div>
+
+<div class="sliderContainer servo"  servoId="2">
+    <input class="spinner" value="0" disabled   />
+    <div  class="slider"></div>
+    <div style="clear:both"></div>
+</div>
+
 <input type="checkbox"  id="useWebRtc"> use webrtc to send led states </input>
-<div class="logContainer"/>
+
+</body>
+</html>
+
 <script>
+	setupComponents();
 	remoteMeStart(true);
 </script>
 </body>
