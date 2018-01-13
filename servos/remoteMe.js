@@ -1,13 +1,24 @@
-remoteMeConfig={
-    automaticlyConnectWS:true,
-	automaticlyConnectWebRTC:false
+remoteMeDefaultConfig={
+    automaticlyConnectWS:false,
+	automaticlyConnectWebRTC:false,
+    webSocketConnectionChange:undefined,
+    webRtcConnectionChange:undefined,
 
-}
+};
+
+var remoteMeConfig;
 
 
-function remoteMeStart(){
+function remoteMeStart(config=undefined) {
+	remoteMeConfig=remoteMeDefaultConfig
+	if (config!=undefined){
+		for(var k in config){
+			remoteMeConfig[k]=config[k];
+		}
+	}
+
     if (remoteMeConfig.automaticlyConnectWS){
-        connectWS();
+        connectWebSocket();
     }
 }
 
@@ -35,7 +46,7 @@ function getWSUrl() {
 }
 var webSocket;
 
-function connectWS() {
+function connectWebSocket() {
     log("connectiong WS");
     webSocket = new WebSocket(getWSUrl());
     webSocket.binaryType = "arraybuffer";
@@ -45,23 +56,66 @@ function connectWS() {
     webSocket.onclose = onCloseWS;
 
 }
+
+function sleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function wait1s() {
+	await sleep(3000);
+
+}
+
+
+function restartWebSocket(){
+    if (isWebSocketConnected()){
+		disconnectWebSocket();
+		setTimeout(connectWebSocket,1000);
+    }else{
+		connectWebSocket();
+    }
+
+}
+
+function isWebSocketConnected(){
+    return webSocket!=undefined && webSocket.readyState === webSocket.OPEN;
+}
+
+function disconnectWebSocket() {
+    if (isWebSocketConnected()){
+		webSocket.close();
+    }
+	webSocket=undefined;
+
+}
+
+
 function onErrorWS(event) {
     log("on error");
-    $("#websocketState").removeClass("on")
+    if (remoteMeConfig.webSocketConnectionChange){
+		remoteMeConfig.webSocketConnectionChange(false);
+    }
+
 };
 
 function onCloseWS(event) {
     log("on close");
-	$("#websocketState").removeClass("on")
-    doDisconnect();
+
+	if (remoteMeConfig.webSocketConnectionChange){
+		remoteMeConfig.webSocketConnectionChange(false);
+	}
+
+    disconnectWebRTC();
 };
 
 function onOpenWS(event) {
     log("websocket connected");
 	if (remoteMeConfig.automaticlyConnectWebRTC){
-		doRegister();
+		connectWebRTC();
 	}
-	$("#websocketState").addClass("on")
+	if (remoteMeConfig.webSocketConnectionChange){
+		remoteMeConfig.webSocketConnectionChange(true);
+	}
 
 };
 
@@ -145,8 +199,20 @@ function WebSocketSend(message) {
     return false;
 }
 
+function isWebRTCConnected(){
+    return openedChanel!=undefined;
+}
 
-function doRegister() {
+function restartWebRTC(){
+	disconnectWebRTC();
+	connectWebRTC();
+}
+
+function connectWebRTC() {
+    if (!isWebSocketConnected()){
+        console.error("websocket is not connected cannot create webrtc connection");
+        return;
+    }
     // No Room concept, random generate room and client id.
     var register = {
         cmd: 'register',
@@ -172,9 +238,12 @@ function doSend(data) {
     return true;
 }
 
-function doDisconnect() {
+function disconnectWebRTC() {
 
-    log("doscinnecitng")
+	if (!isWebSocketConnected()){
+		console.error("websocket is not connected cannot disconnect  webrtc connection");
+		return;
+	}
 
     var message = {
         cmd: "disconnect",
@@ -187,6 +256,8 @@ function doDisconnect() {
         log("Failed to send data: " + data_message);
         return false;
     }
+
+	openedChanel=undefined;
 
 }
 
@@ -235,14 +306,15 @@ function onDataChannel(event){
     openedChanel=event.channel;
 
     logTrace("on data channel "+event.channel.label);
-    event.channel.onopen = function() {
-		$("#webRTCState").addClass("on");
-
-    };
+	if (remoteMeConfig.webRTCConnectionChange){
+		remoteMeConfig.webRTCConnectionChange(true);
+	}
 
 	event.channel.onclose = function() {
-		console.log("on CLOSE  ");
-
+		console.log("on data channel close  ");
+		if (remoteMeConfig.webRTCConnectionChange) {
+			remoteMeConfig.webRTCConnectionChange(false);
+		}
 	};
     event.channel.onmessage=function(e){
         console.log("on Message "+e);
@@ -325,7 +397,9 @@ function onRemoteStreamRemoved(event) {
 
 function onRemoteSdpError(event) {
     console.error('onRemoteSdpError', event.name, event.message);
-	$("#webRTCState").removeClass("on")
+	if (remoteMeConfig.webRTCConnectionChange){
+		remoteMeConfig.webRTCConnectionChange(false);
+	}
 }
 
 function onRemoteSdpSucces() {

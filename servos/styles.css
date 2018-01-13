@@ -1,19 +1,4 @@
-.chips{
-    height: 16px;
-    float: left;
-    margin: 10px;
-    border-radius: 10px;
-    cursor: pointer;
-    border:1px solid gray;
-    padding:8px;
-    font-weight: bold;
-    color:black;
-}
 
-.chips.on{
-    background-color: green;
-    color:white;
-}
 
 
 .sliderContainer{
@@ -22,13 +7,13 @@
     border-radius: 10px;
     margin:10px;
 }
-.sliderContainer .ui-slider{
+.sliderContainer .slider{
     float:left;
-    width:calc(100% - 170px);
+    width:calc(100% - 200px);
     margin-top:10px;
-    margin-left:10px;
+    margin-left:30px;
 }
-.sliderContainer .ui-spinner {
+.sliderContainer .spinner {
     float:left;
     width:150px
 }
