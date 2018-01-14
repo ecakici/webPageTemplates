@@ -6,8 +6,8 @@ var components=[];
 
 function setupComponents(){
 
-	servos = $( ".servo" ).each(function() {
-		servoId=parseInt($(this).attr("servoId"));
+	motors = $( ".motor" ).each(function() {
+		motorId=parseInt($(this).attr("motorId"));
 
 
 		var sliderComponent =$(this).find( ".slider" ).slider({
@@ -19,15 +19,59 @@ function setupComponents(){
 
 		var spinnerComponent=$(this).find( ".spinner" );
 
-		sliderComponent.on('slide',onSlide).data({"servoId":servoId});
+		sliderComponent.on('slide',function(event){
+			motorId=parseInt($(this.parentElement).attr('motorId'));
+
+
+			components[motorId].spinner.val(event.value);
+			components[motorId].value=event.value;
+			setMotor(motorId);
+		}).data({"motorId":motorId});
 
 		//spinnerComponent.change(onSpin);
 
 
-		spinnerComponent.bind('keyup mouseup',onSpin);
+		spinnerComponent.bind('keyup mouseup',function(event){
+			var motorId=parseInt($(this.parentElement).attr('motorId'));
+			var value=parseInt(components[motorId].spinner[0].value);
+			if (isNaN(value) ){
+				value=0;
+			}
+			components[motorId].slider.slider("setValue",value);
+			components[motorId].value=value;
 
-		components[servoId]={spinner:spinnerComponent,
+			setMotor(motorId);
+
+
+		});
+
+		components[motorId]={spinner:spinnerComponent,
 			slider:sliderComponent,value:0};
+	});
+
+
+
+
+	$('.motor .mode').on('click', function() {
+		$(this).parent().find("button").removeClass('active');
+		$(event.target).addClass('active')
+		var motorId=parseInt($(this).parent().attr("motorId"));
+		var mode =components[motorId].mode=parseInt($(event.target).attr("mode"));
+		components[motorId].mode=mode;
+
+		setMotor(motorId);
+	});
+
+
+
+	//-------------------
+
+
+	$('#messageMode button').on('click', function() {
+		$('#messageMode button').removeClass('active')
+		$(this).addClass('active');
+
+
 	});
 
 
@@ -35,6 +79,9 @@ function setupComponents(){
 		$('#messageMode button').removeClass('active')
 		$(this).addClass('active');
 	});
+
+
+
 
 	$('#webSocketState').on('click', function() {
 		if (isWebSocketConnected()){
@@ -59,31 +106,12 @@ function isWebRtc(){
 	return $('#messageMode > .active').attr("webrtc");
 }
 
-function onSpin(event){
-	var servoId=parseInt($(this.parentElement).attr('servoId'));
-	var value=parseInt(components[servoId].spinner[0].value);
-	if (isNaN(value) ){
-		value=0;
-	}
-	components[servoId].slider.slider("setValue",value);
-	components[servoId].value=value;
-
-	setServo(servoId);
-}
-
-function onSlide(event){
-	servoId=parseInt($(this.parentElement).attr('servoId'));
-
-
-	components[servoId].spinner.val(event.value);
-	components[servoId].value=event.value;
-	setServo(servoId);
-}
 
 
 
-var timeoutsByServo=[];
-function setServo(servoId){
+
+var timeoutsByMotor=[];
+function setMotor(motorId){
 
 	var timeout;
 	if (isWebRtc()){
@@ -92,20 +120,29 @@ function setServo(servoId){
 		timeout=50;
 	}
 
-	clearTimeout(timeoutsByServo[servoId]);
-	timeoutsByServo[servoId]=setTimeout( setServoNow,timeout,servoId);
+	clearTimeout(timeoutsByMotor[motorId]);
+	timeoutsByMotor[motorId]=setTimeout( setMotorNow,timeout,motorId);
 }
 
-function setServoNow(servoId) {
-	value=components[servoId].value;
-	console.log("setting servo: "+servoId+" "+value);
+function setMotorNow(motorId) {
+	value = components[motorId].value;
+	mode = components[motorId].mode;
+
+	if (mode == undefined) {
+		mode=2;
+	}
 
 
-	var ret = new Uint8Array(3);
+	console.log("setting motor: "+motorId+" mode: "+mode +" value: "+value);
+
+
+	var ret = new Uint8Array(4);
 	var pos=0;
 
-	pos=putByte(ret, pos ,servoId );
+	pos=putByte(ret, pos ,motorId );
+	pos=putByte(ret, pos ,mode );
 	pos=putShort(ret, pos ,value );
+
 
 	if  (isWebRtc()){
 		sendUserMessageWebrtc(444,ret);

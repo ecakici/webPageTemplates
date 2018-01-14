@@ -8,13 +8,17 @@
     margin:10px;
 }
 .sliderContainer .slider{
-    float:left;
-    width:calc(100% - 200px);
-    margin-top:10px;
-    margin-left:30px;
+    float: left;
+    width: calc(100% - 560px);
+    margin-top: 10px;
+    margin-left: 30px;
+    margin-right: 10px;
 }
 .sliderContainer .spinner {
     float:left;
     width:150px
 }
-
+.sliderContainer .mode {
+    float:left;
+    width:150px
+}
