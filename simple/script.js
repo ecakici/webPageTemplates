@@ -3,8 +3,10 @@
 
 
 var components=[];
+var ot;
 
 function setupComponents(){
+	ot=new OperationTimer(1000);
 
 	motors = $( ".motor" ).each(function() {
 		motorId=parseInt($(this).attr("motorId"));
@@ -97,6 +99,21 @@ function setupComponents(){
 		}else{
 			connectWebRTC();
 		}
+	});
+
+	//------ pam
+
+	$('.try').on('click', function() {
+
+		var operationId=$(this).attr("pam");
+		if (operationId==1){
+			ot.executeWithThis(operationId,test1,this,"maciek")
+		}else if (operationId==2){
+			ot.executeWithThis(operationId,test2,this,"maciek","anna")
+		}else if (operationId==3){
+			ot.executeWithThis(operationId,test0,this);
+		}
+
 	});
 
 }
