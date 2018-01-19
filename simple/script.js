@@ -4,17 +4,22 @@
 
 var components=[];
 var ot;
-var speedometr;
+var speedmeter;
+var turnMeter;
 var speed;
+var turn;
 
 function setupKeyboard(){
-	console.info($(document));
 	$(document).keydown(function(e){
 
 		if (e.which==38){//arrow up
-			speed.setMode(1);
+			speed.setMode(1,e.shiftKey);
 		}else if (e.which==40){//arrow down
-			speed.setMode(-1);
+			speed.setMode(-1,e.shiftKey);
+		}else if (e.which==39){//arrow right
+			turn.setMode(1);
+		}else if (e.which==37){//arrow left
+			turn.setMode(-1);
 		}
 	});
 
@@ -23,7 +28,13 @@ function setupKeyboard(){
 			speed.setMode(0);
 		}else if (e.which==40){//arrow down
 			speed.setMode(0);
+		}else if (e.which==39){//arrow right
+			turn.setMode(0);
+		}else if (e.which==37){//arrow left
+			turn.setMode(0);
 		}
+
+
 
 	});
 }
@@ -32,14 +43,20 @@ function setupComponents(){
 
 	ot=new OperationTimer(100);
 
-	speedometr = new Speedometr('motor1');
+	speedmeter = new SpeedMeter('motor1');
+	turnMeter = new TurnMeter('turn')
 
 
-
-	speed=new Control(-255,255,function(value){
-		speedometr.setSpeed(value);
+	speed=new Control(-255,255,5,function(value){
+		speedmeter.setSpeed(value);
 	});
 
+	turn=new Control(-255,255,0,function(value){
+		turnMeter.setValue(value);
+	});
+	turn.idleWait=0;
+	turn.freeAccelerate=5;
+	turn.accelerate=10;
 
 	setupKeyboard();
 	return;

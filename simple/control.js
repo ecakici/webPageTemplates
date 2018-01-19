@@ -9,7 +9,7 @@ class Control {
 
 	}
 
-	setMode(mode) {
+	setMode(mode,ignoreSteps) {
 		if (this.mode != mode) {
 			this.counter = 0;
 			this.runFunction(this);
@@ -19,16 +19,65 @@ class Control {
 				this.idleCounter=0;
 			}
 
+			if (this.steps>1 && mode!=0){
+				if (ignoreSteps){
+					console.info("ignore steps");
+					this.min=this.minGlobal;
+					this.max=this.maxGlobal;
+				}else{
+					var maxGlobal;
+					var max;
+					var currentValue;
+
+					if (mode ==1) {
+						maxGlobal=this.maxGlobal;
+						max=this.max;
+						currentValue=this.currentValue;
+					}else if (mode ==-1) {
+						maxGlobal=-this.minGlobal;
+						max=-this.min;
+						currentValue=-this.currentValue;
+					}
+
+
+					var round = maxGlobal/this.steps;
+					var currentStep=Math.trunc((currentValue)/round);
+					max=(currentStep+1)*round;
+					max=Math.min(maxGlobal,max);
+
+
+
+					if (mode ==1) {
+						this.max=max;
+						console.info("new max "+max);
+					}else if (mode ==-1) {
+						this.min=-max;
+						console.info("new min "+max);
+					}
+				}
+
+			}
+
+
 			this.prevMode=mode;
 		}
 
 	}
 
-	constructor(min, max, callOnChange) {
+	constructor(min, max,steps, callOnChange) {
 		this.isRunning = false;
 
-		this.min = min;
-		this.max = max;
+		this.minGlobal = min;
+		this.maxGlobal = max;
+
+		if (steps<=0){
+			steps=1;
+		}
+		this.steps=steps;
+
+		this.min = min/steps;
+		this.max = max/steps;
+
 		this.currentValue = 0;
 		this.mode = 0;
 		this.prevMode=0;
@@ -40,9 +89,10 @@ class Control {
 
 		this.callOnChange = callOnChange;
 
-		this.idleWait=7;//how log wiat with downing down
-		this.accelerate = 3.4;
-		this.freeAccelerate = 0.4;
+		this.idleWait=3;//how log wiat with downing down
+		this.accelerate = 4.0;
+		this.freeAccelerate = 0.75;
+		this.ignoreSteps=false;
 	}
 
 
@@ -59,9 +109,9 @@ class Control {
 			if (newValue == 0) {
 				thiz.isRunning = false;
 			} else {
-				if (thiz.idleCounter < thiz.idleWait) {
+				if (thiz.idleCounter <= thiz.idleWait) {
 					thiz.idleCounter++;
-				} else {
+				} else {//powolne zwalnianie
 					realCounter-=thiz.idleCounter;
 					var mn = newValue < 0 ? -1 : 1;
 
@@ -80,39 +130,31 @@ class Control {
 				thiz.idleCounter--;
 			} else {
 				if (thiz.mode == 1) {
-					var mn = 1;
 					if (newValue < 0) {
 						newValue = 0;
 						thiz.isRunning = false;
 					} else {
-						newValue += thiz.accelerate * realCounter * mn;
-						newValue = Math.min(thiz.max, newValue);
+						newValue += thiz.accelerate * realCounter ;
+						newValue = Math.min(thiz.max,newValue);
 					}
-
-
 				} else if (thiz.mode == -1) {
-					var mn = 1;
 					if (newValue > 0) {
 						newValue = 0;
 						thiz.isRunning = false;
 					} else {
-						newValue -= thiz.accelerate * realCounter * mn;
-						newValue = Math.max(thiz.min, newValue);
+						newValue -= thiz.accelerate * realCounter;
+						newValue = Math.max(thiz.min,newValue);
 					}
 
 				}
-
-
-
 			}
-
 		}
 
 		newValue = Math.trunc(newValue);
-		if (thiz.currentValue != newValue) {
-		//	console.info(thiz.currentValue- newValue);
-			thiz.currentValue = newValue;
 
+
+		if (thiz.currentValue != newValue) {
+			thiz.currentValue = newValue;
 			thiz.callOnChange(newValue);
 		}
 
