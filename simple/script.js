@@ -6,16 +6,92 @@ var components=[];
 var ot;
 var speedmeter;
 var turnMeter;
-var speed;
+var speedControll;
 var turn;
+var carController;
+
+
+class CarController{
+
+	constructor(){
+		this.speed=0;
+		this.turn=0;
+	}
+
+
+	setSpeed(speed){
+		this.speed=speed;
+		speedmeter.setValue(speed);
+		setDrive();
+	}
+
+	setTurn(turn){
+		this.turn=turn;
+		turnMeter.setValue(turn);
+		setDrive();
+	}
+
+	compute(){
+		this.leftSpeed= this.speed;
+		this.rightSpeed=this.speed;
+
+
+
+		var mn=this.speed<0?-1:1;//so it turns while drivign backwards as a real car
+
+		this.leftSpeed+=this.turn/2*mn;
+		this.rightSpeed-=this.turn/2*mn;
+
+		this.leftSpeed=Math.min(255,Math.max(-255,this.leftSpeed));
+		this.rightSpeed=Math.min(255,Math.max(-255,this.rightSpeed));
+
+	}
+
+	getLeftSideMotorId(){
+		return 1;
+	}
+
+	getRightSideMotorId(){
+		return 0;
+	}
+
+	getLeftSideSpeed(){
+		return Math.abs(this.leftSpeed);
+	}
+
+	getRightSideSpeed(){
+		return Math.abs(this.rightSpeed);
+	}
+
+	getRightSideMode(){
+		if (this.rightSpeed==0){
+			return 1;
+		}else if (this.rightSpeed<0){
+			return 3;
+		}else{
+			return 2;
+		}
+	}
+
+	getLeftSideMode(){
+		if (this.leftSpeed==0){
+			return 1;
+		}else if (this.leftSpeed<0){
+			return 2;//becsaue basles are mismatch
+		}else{
+			return 3;
+		}
+	}
+}
+
 
 function setupKeyboard(){
 	$(document).keydown(function(e){
 
 		if (e.which==38){//arrow up
-			speed.setMode(1,e.shiftKey);
+			speedControll.setMode(1,e.shiftKey);
 		}else if (e.which==40){//arrow down
-			speed.setMode(-1,e.shiftKey);
+			speedControll.setMode(-1,e.shiftKey);
 		}else if (e.which==39){//arrow right
 			turn.setMode(1);
 		}else if (e.which==37){//arrow left
@@ -25,9 +101,9 @@ function setupKeyboard(){
 
 	$(document).keyup(function(e){
 		if (e.which==38){//arrow up
-			speed.setMode(0);
+			speedControll.setMode(0);
 		}else if (e.which==40){//arrow down
-			speed.setMode(0);
+			speedControll.setMode(0);
 		}else if (e.which==39){//arrow right
 			turn.setMode(0);
 		}else if (e.which==37){//arrow left
@@ -41,85 +117,28 @@ function setupKeyboard(){
 
 function setupComponents(){
 
-	ot=new OperationTimer(100);
+	ot=new OperationTimer(200);
 
-	speedmeter = new SpeedMeter('motor1');
+	carController = new CarController();
+
+	speedmeter = new SpeedMeter('speed');
 	turnMeter = new TurnMeter('turn')
 
 
-	speed=new Control(-255,255,5,function(value){
-		speedmeter.setSpeed(value);
+	speedControll=new Control(-255,255,3,function(value){
+		carController.setSpeed(value);
 	});
 
-	turn=new Control(-255,255,0,function(value){
-		turnMeter.setValue(value);
+
+	turn=new Control(-255,255,3,function(value){
+		carController.setTurn(value);
 	});
 	turn.idleWait=0;
-	turn.freeAccelerate=5;
-	turn.accelerate=10;
+	turn.freeAccelerate=40;
+	turn.accelerate=40;
 
 	setupKeyboard();
-	return;
 
-	motors = $( ".motor" ).each(function() {
-		motorId=parseInt($(this).attr("motorId"));
-
-
-		var sliderComponent =$(this).find( ".slider" ).slider({
-			formatter: function (value) {
-				return 'Current value: ' + value;
-			}
-		});
-
-
-		var spinnerComponent=$(this).find( ".spinner" );
-
-		sliderComponent.on('slide',function(event){
-			motorId=parseInt($(this.parentElement).attr('motorId'));
-
-
-			components[motorId].spinner.val(event.value);
-			components[motorId].value=event.value;
-			setMotor(motorId);
-		}).data({"motorId":motorId});
-
-		//spinnerComponent.change(onSpin);
-
-
-		spinnerComponent.bind('keyup mouseup',function(event){
-			var motorId=parseInt($(this.parentElement).attr('motorId'));
-			var value=parseInt(components[motorId].spinner[0].value);
-			if (isNaN(value) ){
-				value=0;
-			}
-			components[motorId].slider.slider("setValue",value);
-			components[motorId].value=value;
-
-			setMotor(motorId);
-
-
-		});
-
-		components[motorId]={spinner:spinnerComponent,
-			slider:sliderComponent,value:0};
-	});
-
-
-
-
-	$('.motor .mode').on('click', function() {
-		$(this).parent().find("button").removeClass('active');
-		$(event.target).addClass('active')
-		var motorId=parseInt($(this).parent().attr("motorId"));
-		var mode =components[motorId].mode=parseInt($(event.target).attr("mode"));
-		components[motorId].mode=mode;
-
-		setMotor(motorId);
-	});
-
-
-
-	//-------------------
 
 
 	$('#messageMode button').on('click', function() {
@@ -165,32 +184,29 @@ function isWebRtc(){
 
 
 
-
-
-function setMotor(motorId){
-
-	ot.execute("setMotors",setMotorNow,motorId)
-
+function setDrive(){
+	ot.execute("setDrive",setDriveNow)
 }
 
-function setMotorNow(motorId) {
-	value = components[motorId].value;
-	mode = components[motorId].mode;
+function setDriveNow() {
 
-	if (mode == undefined) {
-		mode=2;
-	}
+	carController.compute();
+	console.log("setting leftSide: "+carController.getLeftSideSpeed()+" right Side: "+carController.getRightSideSpeed());
 
 
-	console.log("setting motor: "+motorId+" mode: "+mode +" value: "+value);
-
-
-	var ret = new Uint8Array(4);
+	var ret = new Uint8Array(8);
 	var pos=0;
 
-	pos=putByte(ret, pos ,motorId );
-	pos=putByte(ret, pos ,mode );
-	pos=putShort(ret, pos ,value );
+	pos=putByte(ret, pos ,1 );//mode 1= setMotor
+	pos=putByte(ret, pos ,carController.getLeftSideMotorId() );//motorId 1 = left side
+	pos=putByte(ret, pos ,carController.getLeftSideMode() );
+	pos=putByte(ret, pos ,carController.getLeftSideSpeed() );
+
+
+	pos=putByte(ret, pos ,1 );//mode 1= setMotor
+	pos=putByte(ret, pos ,carController.getRightSideMotorId() );//motorId 1 = left side
+	pos=putByte(ret, pos ,carController.getRightSideMode() );
+	pos=putByte(ret, pos ,carController.getRightSideSpeed() );
 
 
 	if  (isWebRtc()){

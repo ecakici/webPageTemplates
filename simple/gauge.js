@@ -41,7 +41,7 @@ class TurnMeter{
 }
 class SpeedMeter{
 
-	setSpeed(speed){
+	setValue(speed){
 		this.gauge.value=speed;
 	}
 
