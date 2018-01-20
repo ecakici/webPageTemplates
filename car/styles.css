@@ -263,12 +263,7 @@ video {
     }
 }
 
-.dotContainer {
-    width: 266px;
-    height: 266px;
-    border: 1px solid gray;
-}
-
+.
 .progressContainer {
     width: 266px;
     height: 20px;
@@ -277,6 +272,13 @@ video {
 .progressContainer  div {
     height: 20px;
     background-color: red;
+}
+
+
+dotContainer {
+    width: 266px;
+    height: 266px;
+    border: 1px solid gray;
 }
 
 

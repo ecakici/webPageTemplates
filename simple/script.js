@@ -9,7 +9,9 @@ var turnMeter;
 var speedControll;
 var turn;
 var carController;
-
+var leftSideSpeedMeter ;
+var rightSideSpeedMeter ;
+var cameraPosition;
 
 class CarController{
 
@@ -39,11 +41,14 @@ class CarController{
 
 		var mn=this.speed<0?-1:1;//so it turns while drivign backwards as a real car
 
-		this.leftSpeed+=this.turn/2*mn;
-		this.rightSpeed-=this.turn/2*mn;
+		this.leftSpeed+=this.turn/mn;
+		this.rightSpeed-=this.turn/mn;
 
 		this.leftSpeed=Math.min(255,Math.max(-255,this.leftSpeed));
 		this.rightSpeed=Math.min(255,Math.max(-255,this.rightSpeed));
+
+		leftSideSpeedMeter.setValue(this.leftSpeed);
+		rightSideSpeedMeter.setValue(this.rightSpeed);
 
 	}
 
@@ -82,6 +87,11 @@ class CarController{
 			return 3;
 		}
 	}
+
+	setCameraPosition(x,y){
+		console.info(x+" "+y);
+		cameraPosition.setPosition(x*4096,y*4096);
+	}
 }
 
 
@@ -118,11 +128,15 @@ function setupKeyboard(){
 function setupComponents(){
 
 	ot=new OperationTimer(200);
+	cameraPosition=new DotPosition("cameraPosition",100,100,0,4096,0,4096);
 
 	carController = new CarController();
 
-	speedmeter = new SpeedMeter('speed');
-	turnMeter = new TurnMeter('turn')
+	speedmeter = new SpeedMeter('speed',"Speed",300,300);
+	turnMeter = new TurnMeter('turn',320,100)
+
+	leftSideSpeedMeter = new SpeedMeter('leftSideSpeed',"left",150,150);
+	rightSideSpeedMeter = new SpeedMeter('rightSideSpeed',"right",150,150);
 
 
 	speedControll=new Control(-255,255,3,function(value){
@@ -140,6 +154,19 @@ function setupComponents(){
 	setupKeyboard();
 
 
+	$("#remoteVideo").mousemove( function( event ) {
+		var video = $("#remoteVideo");
+		var parentOffset =video.offset();
+
+		var pox_x = event.pageX/video.width();
+		var pos_y = event.pageY/video.height();
+
+		carController.setCameraPosition(pox_x,pos_y);
+	});
+
+
+
+	//-----------
 
 	$('#messageMode button').on('click', function() {
 		$('#messageMode button').removeClass('active')
@@ -175,8 +202,9 @@ function setupComponents(){
 
 
 
-}
 
+}
+counter=0;
 
 function isWebRtc(){
 	return $('#messageMode > .active').attr("webrtc");
@@ -185,6 +213,11 @@ function isWebRtc(){
 
 
 function setDrive(){
+	if  (isWebRtc()){
+		ot.defaultDelay=100;
+	}else{
+		ot.defaultDelay=400;
+	}
 	ot.execute("setDrive",setDriveNow)
 }
 

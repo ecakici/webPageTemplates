@@ -1,19 +1,67 @@
+class DotPosition {
+	constructor(elementId, width, height,minX,maxX,minY,maxY) {
+		this.container = $('#' + elementId);
 
+		this.minX=minX;
+		this.maxX=maxX;
 
-class TurnMeter{
-	setValue(value){
-		this.gauge.value=value;
+		this.minY=minY;
+		this.maxY=maxY;
+
+		this.width=width;
+		this.height=height;
+
+		var containerCss = {
+			"opacity": "0.5",
+			"width": width + "px",
+			"height": height + "px",
+			"border": "1px solid #bb0014",
+			"position": "absolute",
+			"right": "0px",
+			"top": "0px",
+			"overflow":"hidden"
+		};
+
+		var dotCss = {
+			"position": "relative",
+			"top": "0px",
+			"left": "0px",
+			"width": "10px",
+			"height": "10px",
+			"border": "1px solid red",
+			"background-color": "red",
+			"border-radius": "5px"
+		};
+		this.container.css(containerCss);
+
+		this.dot = $("<div></div>");
+		this.dot.css(dotCss);
+		this.container.append(this.dot);
+		this.setPosition(0,0);
 	}
-	constructor(canvasId)
-	{
-		var ticks=[];
+
+
+	setPosition(x,y){
+		this.dot.css("left",this.width*(x-this.minX)/(this.maxX-this.minX)-6+"px");
+		this.dot.css("top",this.height*(y-this.minY)/(this.maxY-this.minY)-6+"px");
+	}
+
+}
+
+class TurnMeter {
+	setValue(value) {
+		this.gauge.value = value;
+	}
+
+	constructor(canvasId, width, height) {
+		var ticks = [];
 		ticks.push("min");
 		ticks.push(0);
 		ticks.push("max");
-		this.gauge=new LinearGauge({
+		this.gauge = new LinearGauge({
 			renderTo: canvasId,
-			width: 400,
-			height: 150,
+			width: width,
+			height: height,
 			minValue: -255,
 			maxValue: 255,
 			majorTicks: ticks,
@@ -35,32 +83,32 @@ class TurnMeter{
 			animationTarget: "plate",
 			barWidth: 0,
 			ticksWidth: 10,
-			ticksWidthMinor:5
+			ticksWidthMinor: 5
 		}).draw();
 	}
 }
-class SpeedMeter{
 
-	setValue(speed){
-		this.gauge.value=speed;
+class SpeedMeter {
+
+	setValue(speed) {
+		this.gauge.value = speed;
 	}
 
-	constructor(canvasId,title)
-	{
-		var ticks=[];
+	constructor(canvasId, title, width, height) {
+		var ticks = [];
 		ticks.push("min");
-		for(var i=-200;i<=200;i+=50){
-			ticks.push(i+"");
+		for (var i = -200; i <= 200; i += 50) {
+			ticks.push(i + "");
 		}
 		ticks.push("max");
 		this.gauge = new RadialGauge({
 			renderTo: canvasId,
-			width: 300,
-			height: 300,
+			width: width,
+			height: height,
 			units: title,
 			minValue: -255,
 			maxValue: 255,
-			majorTicks:ticks,
+			majorTicks: ticks,
 			minorTicks: 2,
 			strokeTicks: true,
 			highlights: [
@@ -68,7 +116,7 @@ class SpeedMeter{
 					"from": 200,
 					"to": 255,
 					"color": "#dd0031"
-				},{
+				}, {
 					"from": 120,
 					"to": 200,
 					"color": "#FFAD00"
@@ -77,7 +125,7 @@ class SpeedMeter{
 					"from": -255,
 					"to": -200,
 					"color": "#dd0031"
-				},{
+				}, {
 					"from": -200,
 					"to": -120,
 					"color": "#FFAD00"
