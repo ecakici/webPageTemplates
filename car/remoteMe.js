@@ -1,6 +1,26 @@
+remoteMeDefaultConfig={
+    automaticlyConnectWS:false,
+	automaticlyConnectWebRTC:false,
+    webSocketConnectionChange:undefined,
+    webRtcConnectionChange:undefined,
+
+};
+
+var remoteMeConfig;
 
 
+function remoteMeStart(config=undefined) {
+	remoteMeConfig=remoteMeDefaultConfig
+	if (config!=undefined){
+		for(var k in config){
+			remoteMeConfig[k]=config[k];
+		}
+	}
 
+    if (remoteMeConfig.automaticlyConnectWS){
+        connectWebSocket();
+    }
+}
 
 function log(text) {
     var now = (window.performance.now() / 1000).toFixed(3);
@@ -26,7 +46,7 @@ function getWSUrl() {
 }
 var webSocket;
 
-function connectWS() {
+function connectWebSocket() {
     log("connectiong WS");
     webSocket = new WebSocket(getWSUrl());
     webSocket.binaryType = "arraybuffer";
@@ -36,20 +56,62 @@ function connectWS() {
     webSocket.onclose = onCloseWS;
 
 }
+
+function sleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+
+function restartWebSocket(){
+    if (isWebSocketConnected()){
+		disconnectWebSocket();
+		setTimeout(connectWebSocket,1000);
+    }else{
+		connectWebSocket();
+    }
+
+}
+
+function isWebSocketConnected(){
+    return webSocket!=undefined && webSocket.readyState === webSocket.OPEN;
+}
+
+function disconnectWebSocket() {
+    if (isWebSocketConnected()){
+		webSocket.close();
+    }
+	webSocket=undefined;
+
+}
+
+
 function onErrorWS(event) {
     log("on error");
-    $("#websocketState").css("background-color", "#AA0000");
+    if (remoteMeConfig.webSocketConnectionChange){
+		remoteMeConfig.webSocketConnectionChange(false);
+    }
+
 };
 
 function onCloseWS(event) {
     log("on close");
-    $("#websocketState").css("background-color", "#00AA00");
-    doDisconnect();
+
+	if (remoteMeConfig.webSocketConnectionChange){
+		remoteMeConfig.webSocketConnectionChange(false);
+	}
+
+    disconnectWebRTC();
 };
 
 function onOpenWS(event) {
     log("websocket connected");
-    $("#websocketState").css("background-color", "#00AA00");
+	if (remoteMeConfig.automaticlyConnectWebRTC){
+		connectWebRTC();
+	}
+	if (remoteMeConfig.webSocketConnectionChange){
+		remoteMeConfig.webSocketConnectionChange(true);
+	}
 
 };
 
@@ -133,8 +195,20 @@ function WebSocketSend(message) {
     return false;
 }
 
+function isWebRTCConnected(){
+    return openedChanel!=undefined;
+}
 
-function doRegister() {
+function restartWebRTC(){
+	disconnectWebRTC();
+	connectWebRTC();
+}
+
+function connectWebRTC() {
+    if (!isWebSocketConnected()){
+        console.error("websocket is not connected cannot create webrtc connection");
+        return;
+    }
     // No Room concept, random generate room and client id.
     var register = {
         cmd: 'register',
@@ -160,9 +234,12 @@ function doSend(data) {
     return true;
 }
 
-function doDisconnect() {
+function disconnectWebRTC() {
 
-    log("doscinnecitng")
+	if (!isWebSocketConnected()){
+		console.error("websocket is not connected cannot disconnect  webrtc connection");
+		return;
+	}
 
     var message = {
         cmd: "disconnect",
@@ -175,6 +252,8 @@ function doDisconnect() {
         log("Failed to send data: " + data_message);
         return false;
     }
+
+	openedChanel=undefined;
 
 }
 
@@ -223,9 +302,16 @@ function onDataChannel(event){
     openedChanel=event.channel;
 
     logTrace("on data channel "+event.channel.label);
-    event.channel.onopen = function() {
-        console.log('Data channel is open and ready to be used.');
-    };
+	if (remoteMeConfig.webRTCConnectionChange){
+		remoteMeConfig.webRTCConnectionChange(true);
+	}
+
+	event.channel.onclose = function() {
+		console.log("on data channel close  ");
+		if (remoteMeConfig.webRTCConnectionChange) {
+			remoteMeConfig.webRTCConnectionChange(false);
+		}
+	};
     event.channel.onmessage=function(e){
         console.log("on Message "+e);
     }
@@ -292,22 +378,29 @@ function doHandlePeerMessage(data) {
 
 function onSessionConnecting(message) {
     logTrace("Session connecting.");
+
 }
 
 function onSessionOpened(message) {
     logTrace("Session opened.");
+
 }
 
 function onRemoteStreamRemoved(event) {
     logTrace("Remote stream removed.");
+
 }
 
 function onRemoteSdpError(event) {
     console.error('onRemoteSdpError', event.name, event.message);
+	if (remoteMeConfig.webRTCConnectionChange){
+		remoteMeConfig.webRTCConnectionChange(false);
+	}
 }
 
 function onRemoteSdpSucces() {
     logTrace('onRemoteSdpSucces');
+
 }
 
 
@@ -451,3 +544,90 @@ function RemoveLineInRange(sdpLines, startLine, endLine, prefix, substr) {
 
 
 //PEER connection closed
+
+
+// functions for users
+
+function sendUserMessage(receiveDeviceId,data){
+	sendWebSocket(getUserMessage(WSUserMessageSettings.NO_RENEWAL,receiveDeviceId,thisDeviceId, 0,data));
+}
+
+
+function sendUserMessageWebrtc(receiveDeviceId,data){
+	sendWebRtc(getUserMessage(WSUserMessageSettings.NO_RENEWAL,receiveDeviceId,thisDeviceId, 0,data));
+}
+
+function test0(){
+
+	console.info(this);
+	console.info("no arguments");
+}
+function test1(a){
+	console.info(a);
+}
+function test2(a,b){
+    console.info(a+" "+b);
+}
+
+
+class OperationTimer{
+
+
+	constructor(defaultDelay) {
+		this.toExecute = [];
+		this.executeDelay = [];
+		this.timers = [];
+
+		if (defaultDelay==undefined){
+		    this.defaultDelay=10;
+        }else{
+			this.defaultDelay=defaultDelay;
+        }
+	}
+
+	setDelayForOperationId(operationId,delay){
+		this.executeDelay[operationId]=delay;
+	}
+
+	executeWithThis(operationId,fun,thiz, ...parameters){
+        if (this.timers[operationId]==undefined){//for first time we call it immidetly
+			fun.apply	(thiz,parameters);
+			this.setTimeout(this,operationId);// we set timepout but nothing to execute
+        }else{
+			this.toExecute[operationId]={'fun':fun,'thiz':thiz,'parameters':parameters};
+			console.info("added to execute later");
+        }
+
+
+
+	}
+    execute(operationId,fun, ...parameters){
+		this.executeWithThis(operationId,fun,undefined,parameters);
+
+    }
+
+    setTimeout(thiz,operationId){
+		var delayOfCurrent=thiz.executeDelay[operationId];
+		if (delayOfCurrent==undefined){
+			delayOfCurrent= thiz.defaultDelay;
+		}
+		thiz.timers[operationId]=setTimeout(thiz.executeNow,delayOfCurrent,thiz,operationId);
+	}
+
+	executeNow(thiz,operationId){
+
+        var toExecute=thiz.toExecute[operationId];
+
+		thiz.toExecute[operationId]=undefined;
+
+        if (toExecute!=undefined){
+            toExecute.fun.apply(toExecute.thiz,toExecute.parameters);
+			thiz.setTimeout(thiz,operationId);
+        }else{
+			thiz.timers[operationId]=undefined;//so we call it again after some time of next execituin
+		}
+    }
+
+}
+
+
