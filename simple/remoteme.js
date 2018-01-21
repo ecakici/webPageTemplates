@@ -61,10 +61,6 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function wait1s() {
-	await sleep(3000);
-
-}
 
 
 function restartWebSocket(){
@@ -590,18 +586,13 @@ class OperationTimer{
 	}
 
 	setDelayForOperationId(operationId,delay){
-		this.executeDelay[operationId,delay]
+		this.executeDelay[operationId]=delay;
 	}
 
 	executeWithThis(operationId,fun,thiz, ...parameters){
         if (this.timers[operationId]==undefined){//for first time we call it immidetly
 			fun.apply	(thiz,parameters);
-			var delayOfCurrent=this.executeDelay[operationId];
-			if (delayOfCurrent==undefined){
-				delayOfCurrent= this.defaultDelay;
-            }
-
-			this.timers[operationId]=setTimeout(this.executeNow,delayOfCurrent,this,operationId);// we set timepout but nothing to execute
+			this.setTimeout(this,operationId);// we set timepout but nothing to execute
         }else{
 			this.toExecute[operationId]={'fun':fun,'thiz':thiz,'parameters':parameters};
 			console.info("added to execute later");
@@ -615,9 +606,15 @@ class OperationTimer{
 
     }
 
+    setTimeout(thiz,operationId){
+		var delayOfCurrent=thiz.executeDelay[operationId];
+		if (delayOfCurrent==undefined){
+			delayOfCurrent= thiz.defaultDelay;
+		}
+		thiz.timers[operationId]=setTimeout(thiz.executeNow,delayOfCurrent,thiz,operationId);
+	}
 
 	executeNow(thiz,operationId){
-		thiz.timers[operationId]=undefined;//so we call it again
 
         var toExecute=thiz.toExecute[operationId];
 
@@ -625,7 +622,10 @@ class OperationTimer{
 
         if (toExecute!=undefined){
             toExecute.fun.apply(toExecute.thiz,toExecute.parameters);
-        }
+			thiz.setTimeout(thiz,operationId);
+        }else{
+			thiz.timers[operationId]=undefined;//so we call it again after some time of next execituin
+		}
     }
 
 }

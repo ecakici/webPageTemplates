@@ -16,8 +16,21 @@ var cameraPosition;
 class CarController{
 
 	constructor(){
-		this.speed=0;
 		this.turn=0;
+		this.speed=0;
+		this.cameraX=0.5;
+		this.cameraY=0.5;
+
+		this.xAxeCenter= 582;
+		this.xAxeRange=200;
+
+		this.yAxeCenter=430;
+		this.yAxeRange=200;
+
+
+		this.cameraXDirection=-1;
+		this.cameraYDirection=1;
+
 	}
 
 
@@ -50,6 +63,8 @@ class CarController{
 		leftSideSpeedMeter.setValue(this.leftSpeed);
 		rightSideSpeedMeter.setValue(this.rightSpeed);
 
+
+
 	}
 
 	getLeftSideMotorId(){
@@ -57,6 +72,13 @@ class CarController{
 	}
 
 	getRightSideMotorId(){
+		return 0;
+	}
+
+	getCameraXId(){
+		return 1;
+	}
+	getCameraYId(){
 		return 0;
 	}
 
@@ -89,8 +111,19 @@ class CarController{
 	}
 
 	setCameraPosition(x,y){
-		console.info(x+" "+y);
+		this.cameraX=x;
+		this.cameraY=y;
+
 		cameraPosition.setPosition(x*4096,y*4096);
+		setCamera();
+	}
+
+	getCameraX(){
+		return this.xAxeCenter+(this.cameraX-0.5)*2*this.xAxeRange*this.cameraXDirection;
+	}
+
+	getCameraY(){
+		return this.yAxeCenter+(this.cameraY-0.5)*2*this.yAxeRange*this.cameraYDirection;
 	}
 }
 
@@ -120,8 +153,6 @@ function setupKeyboard(){
 			turn.setMode(0);
 		}
 
-
-
 	});
 }
 
@@ -130,10 +161,10 @@ function setupComponents(){
 	ot=new OperationTimer(200);
 	cameraPosition=new DotPosition("cameraPosition",100,100,0,4096,0,4096);
 
-	carController = new CarController();
+
 
 	speedmeter = new SpeedMeter('speed',"Speed",300,300);
-	turnMeter = new TurnMeter('turn',320,100)
+	turnMeter = new TurnMeter('turn',320,100);
 
 	leftSideSpeedMeter = new SpeedMeter('leftSideSpeed',"left",150,150);
 	rightSideSpeedMeter = new SpeedMeter('rightSideSpeed',"right",150,150);
@@ -151,6 +182,13 @@ function setupComponents(){
 	turn.freeAccelerate=40;
 	turn.accelerate=40;
 
+
+	carController = new CarController();
+	carController.setSpeed(0);
+	carController.setTurn(0);
+	carController.setCameraPosition(0.5,0.5);
+
+
 	setupKeyboard();
 
 
@@ -166,6 +204,11 @@ function setupComponents(){
 
 
 
+	$('#cameraCenter').on('click', function() {
+		carController.setCameraPosition(0.5,0.5);
+
+
+	});
 	//-----------
 
 	$('#messageMode button').on('click', function() {
@@ -214,12 +257,49 @@ function isWebRtc(){
 
 function setDrive(){
 	if  (isWebRtc()){
-		ot.defaultDelay=100;
+		ot.defaultDelay=150;
 	}else{
 		ot.defaultDelay=400;
 	}
 	ot.execute("setDrive",setDriveNow)
 }
+
+function setCamera(){
+	if  (isWebRtc()){
+		ot.defaultDelay=150;
+	}else{
+		ot.defaultDelay=400;
+	}
+	ot.execute("setCamera",setCameraNow)
+}
+
+function setCameraNow() {
+
+	console.log("camera x:: "+carController.getCameraX()+" y: "+carController.getCameraY());
+
+
+	var ret = new Uint8Array(8);
+	var pos=0;
+
+	pos=putByte(ret, pos ,2);//mode 2= setCamera
+	pos=putByte(ret, pos ,carController.getCameraXId() );
+	pos=putShort(ret, pos ,carController.getCameraX() );
+
+
+
+	pos=putByte(ret, pos ,2);//mode 2= setCamera
+	pos=putByte(ret, pos ,carController.getCameraYId() );
+	pos=putShort(ret, pos ,carController.getCameraY() );
+
+
+	if  (isWebRtc()){
+		sendUserMessageWebrtc(444,ret);
+	}else{
+		sendUserMessage(444,ret);
+
+	}
+}
+
 
 function setDriveNow() {
 

@@ -1,15 +1,15 @@
 class DotPosition {
-	constructor(elementId, width, height,minX,maxX,minY,maxY) {
+	constructor(elementId, width, height, minX, maxX, minY, maxY) {
 		this.container = $('#' + elementId);
 
-		this.minX=minX;
-		this.maxX=maxX;
+		this.minX = minX;
+		this.maxX = maxX;
 
-		this.minY=minY;
-		this.maxY=maxY;
+		this.minY = minY;
+		this.maxY = maxY;
 
-		this.width=width;
-		this.height=height;
+		this.width = width;
+		this.height = height;
 
 		var containerCss = {
 			"opacity": "0.5",
@@ -19,7 +19,7 @@ class DotPosition {
 			"position": "absolute",
 			"right": "0px",
 			"top": "0px",
-			"overflow":"hidden"
+			"overflow": "hidden"
 		};
 
 		var dotCss = {
@@ -32,18 +32,41 @@ class DotPosition {
 			"background-color": "red",
 			"border-radius": "5px"
 		};
+
+		var textCss = {
+			"position": "relative",
+			"top": "0px",
+			"left": "0px",
+			"font-size": "12pt",
+			"line-height": "9pt",
+			"margin-top": "-5pt",
+			"padding-top": "0px",
+			"color": "red",
+			"font-family":"Courier New, monospace"
+		};
 		this.container.css(containerCss);
 
 		this.dot = $("<div></div>");
 		this.dot.css(dotCss);
 		this.container.append(this.dot);
-		this.setPosition(0,0);
+
+
+		this.text = $("<div></div>");
+		this.text.css(textCss);
+		this.text.html("");
+		this.container.append(this.text);
+
+
+
+		this.setPosition(0, 0);
 	}
 
 
-	setPosition(x,y){
-		this.dot.css("left",this.width*(x-this.minX)/(this.maxX-this.minX)-6+"px");
-		this.dot.css("top",this.height*(y-this.minY)/(this.maxY-this.minY)-6+"px");
+	setPosition(x, y) {
+		this.dot.css("left", this.width * (x - this.minX) / (this.maxX - this.minX) - 6 + "px");
+		this.dot.css("top", this.height * (y - this.minY) / (this.maxY - this.minY) - 6 + "px");
+
+		this.text.html(`x=${Math.round(x)}<br/>y=${Math.round(y)}`);
 	}
 
 }
