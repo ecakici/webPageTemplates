@@ -1,5 +1,7 @@
-
-
+/**
+ * you set functino to run
+ * then when u are runing multiple through this class the real fiunction will be called not often once per some specific time
+ */
 class OperationTimer {
 
 

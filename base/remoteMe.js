@@ -1,3 +1,13 @@
+WebrtcConnectingStatusEnum ={
+	CONNECTED :0,
+	DISCONNECTED:1,
+	FAILED:2,
+	CONNECTING:3,
+	DISCONNECTING:4,
+	CHECKING:5
+}
+
+
 class RemoteMe {
 
 
@@ -31,6 +41,11 @@ class RemoteMe {
 		if (this.remoteMeConfig.automaticlyConnectWS) {
 			this.connectWebSocket();
 		}
+
+		window.onbeforeunload = function(event) {
+			this.disconnectWebRTC();
+
+		}.bind(this);
 	}
 
 
@@ -150,7 +165,9 @@ class RemoteMe {
 	onOpenWS(event) {
 		RemoteMe.thiz.log("websocket connected");
 		if (RemoteMe.thiz.remoteMeConfig.automaticlyConnectWebRTC) {
-			RemoteMe.thiz.call(connectWebRTC());
+			setTimeout(function () {
+				RemoteMe.thiz.connectWebRTC();
+			}.bind(this),1000);
 		}
 		if (RemoteMe.thiz.remoteMeConfig.webSocketConnectionChange) {
 			RemoteMe.thiz.remoteMeConfig.webSocketConnectionChange(true);
@@ -232,8 +249,14 @@ class RemoteMe {
 
 
 	restartWebRTC() {
-		disconnectWebRTC();
-		connectWebRTC();
+		this.disconnectWebRTC();
+		this.connectWebRTC();
+	}
+
+	onWebrtcChange(status) {
+		if (RemoteMe.thiz.remoteMeConfig.webRTCConnectionChange){
+			RemoteMe.thiz.remoteMeConfig.webRTCConnectionChange(status);
+		}
 	}
 
 
@@ -242,6 +265,9 @@ class RemoteMe {
 			console.error("websocket is not connected cannot create webrtc connection");
 			return;
 		}
+
+		this.onWebrtcChange(WebrtcConnectingStatusEnum.CONNECTING);
+
 		// No Room concept, random generate room and client id.
 		var register = {
 			cmd: 'register',
@@ -276,6 +302,10 @@ class RemoteMe {
 			return;
 		}
 
+		this.conf
+
+		this.onWebrtcChange(WebrtcConnectingStatusEnum.DISCONNECTING);
+
 		var message = {
 			cmd: "disconnect",
 			msg: "",
@@ -305,14 +335,16 @@ class RemoteMe {
 
 		this.peerConnection = new RTCPeerConnection(this.remoteMeConfig.pcConfig, this.remoteMeConfig.pcOptions);
 		this.peerConnection.oniceconnectionstatechange = function () {
-			if (RemoteMe.thiz.remoteMeConfig.webRTCConnectionChange) {
-				if (RemoteMe.thiz.peerConnection.iceConnectionState == 'disconnected' || RemoteMe.thiz.peerConnection.iceConnectionState == 'failed') {
-					RemoteMe.thiz.remoteMeConfig.webRTCConnectionChange(false);
-					this.openedChanel=null;
-				} else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'connected') {
-					RemoteMe.thiz.remoteMeConfig.webRTCConnectionChange(true);
-				}
+			if (RemoteMe.thiz.peerConnection.iceConnectionState == 'disconnected'){
+				RemoteMe.thiz.onWebrtcChange(WebrtcConnectingStatusEnum.DISCONNECTED);
+			}else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'failed'){
+				RemoteMe.thiz.onWebrtcChange(WebrtcConnectingStatusEnum.FAILED);
+			}else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'connected'){
+				RemoteMe.thiz.onWebrtcChange(WebrtcConnectingStatusEnum.CONNECTED);
+			}else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'checking'){
+				RemoteMe.thiz.onWebrtcChange(WebrtcConnectingStatusEnum.CHECKING);
 			}
+
 			RemoteMe.thiz.log("webrtc connection status changed" + RemoteMe.thiz.peerConnection.iceConnectionState)
 		}
 		this.peerConnection.onicecandidate = function (event) {
