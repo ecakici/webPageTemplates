@@ -27,17 +27,19 @@
           crossorigin="anonymous">
 
 
-    <script src="remoteMe.js"></script>
-    <script src="messages.js"></script>
-    <script src="adapter.js"></script>
-    <script src="control.js"></script>
-    <script src="gauge.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/remoteMe.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/messages.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/adapter.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/control.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/gauge.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/operationTimer.js"></script>
+
 
     <script>
 
 		var thisDeviceId =####deviceId#;
 		var raspberryPiDeviceId =####raspberryPiDeviceId#;
-		var carScriptDeviceId=23;
+		var carScriptDeviceId=12;
 
 
     </script>
@@ -68,10 +70,6 @@
             <button type="button" class="btn btn-secondary" id="webSocketState">Web Socket</button>
             <button type="button" class="btn btn-secondary" id="webRTCState">Web RTC</button>
 
-            <div class="btn-group " id="messageMode" style="margin-top:10px">
-                <button type="button" class="btn btn-primary active">WebSocket</button>
-                <button type="button" class="btn btn-primary " webrtc="true">WebRTC</button>
-            </div>
         </div>
     </div>
 
@@ -98,12 +96,14 @@
 </html>
 
 <script>
-	setupComponents();
-	remoteMeStart({
+
+	var remoteme = new RemoteMe({
 		automaticlyConnectWS: false,
 		webSocketConnectionChange: webSocketConnectionChange,
 		webRTCConnectionChange: webRtcConnectionChange,
 	});
+
+	setupComponents();
 </script>
 </body>
 </html>

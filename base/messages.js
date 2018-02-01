@@ -12,24 +12,6 @@ AndroidMessageIcon = {DEFAULT_ICON:1,PERSON_ICON:2,THIEF_ICON:3,WINDOW_OPEN_ICON
 AndroidMessageSound= {DEFAULT_SOUND:1};
 
 
-function sendWebSocket(bytearray){
-    if (webSocket!=undefined){
-        webSocket.send(bytearray.buffer)
-    }else{
-        log("websocket is not opened");
-    }
-}
-
-function sendWebRtc(bytearray){
-    if (openedChanel){
-        openedChanel.send(bytearray.buffer)
-    }else{
-        log("webrtc channels is not opened")
-    }
-
-}
-
-
 //getUserMessage(WSUserMessageSettings.NO_RENEWAL,1234,12,[1,2,3,4,5,6]);
 //getUserMessage(WSUserMessageSettings.NO_RENEWAL,1234,12,"remotemMe some text");
 function getUserMessage( userMessageSettings, receiverDeviceId,senderDeviceId, messageId, data) {

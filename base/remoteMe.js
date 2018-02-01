@@ -1,546 +1,607 @@
-remoteMeDefaultConfig={
-    automaticlyConnectWS:false,
-	automaticlyConnectWebRTC:false,
-    webSocketConnectionChange:undefined,
-    webRtcConnectionChange:undefined,
-
-};
-
-var remoteMeConfig;
+class RemoteMe {
 
 
-function remoteMeStart(config=undefined) {
-	remoteMeConfig=remoteMeDefaultConfig
-	if (config!=undefined){
-		for(var k in config){
-			remoteMeConfig[k]=config[k];
+	constructor(config = undefined) {
+		RemoteMe.thiz = this;
+		var remoteMeDefaultConfig = {
+			automaticlyConnectWS: false,
+			automaticlyConnectWebRTC: false,
+			webSocketConnectionChange: undefined,
+			webRtcConnectionChange: undefined,
+			pcConfig: {"iceServers": [{"urls": "stun:stun.l.google.com:19302"}]},
+			pcOptions: {optional: [{DtlsSrtpKeyAgreement: true}]},
+			mediaConstraints: {'mandatory': {'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true}}
+		};
+
+
+		this.remoteMeConfig;
+		this.webSocket;
+		this.openedChanel = undefined;
+		this.messageCounter = 0;
+		this.peerConnection;
+
+
+		this.remoteMeConfig = remoteMeDefaultConfig;
+		if (config != undefined) {
+			for (var k in config) {
+				this.remoteMeConfig[k] = config[k];
+			}
+		}
+
+		if (this.remoteMeConfig.automaticlyConnectWS) {
+			this.connectWebSocket();
 		}
 	}
 
-    if (remoteMeConfig.automaticlyConnectWS){
-        connectWebSocket();
-    }
-}
 
-function log(text) {
-    var now = (window.performance.now() / 1000).toFixed(3);
-    console.log(now + ': ', text);
-}
-function logTrace(text) {
-    var now = (window.performance.now() / 1000).toFixed(3);
-    console.debug(now + ': ', text);
-}
-
-
-
-function getWSUrl() {
-    var ret;
-    if (window.location.protocol == 'https') {
-        ret = "wss://";
-    } else {
-        ret = "ws://";
-    }
-    ret += window.location.host + "/api/ws/v1/" + thisDeviceId;
-    return ret;
-
-}
-var webSocket;
-
-function connectWebSocket() {
-    log("connectiong WS");
-    webSocket = new WebSocket(getWSUrl());
-    webSocket.binaryType = "arraybuffer";
-    webSocket.onopen = onOpenWS;
-    webSocket.onmessage = onMessageWS;
-    webSocket.onerror = onErrorWS;
-    webSocket.onclose = onCloseWS;
-
-}
-
-function sleep(ms) {
-	return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-
-
-function restartWebSocket(){
-    if (isWebSocketConnected()){
-		disconnectWebSocket();
-		setTimeout(connectWebSocket,1000);
-    }else{
-		connectWebSocket();
-    }
-
-}
-
-function isWebSocketConnected(){
-    return webSocket!=undefined && webSocket.readyState === webSocket.OPEN;
-}
-
-function disconnectWebSocket() {
-    if (isWebSocketConnected()){
-		webSocket.close();
-    }
-	webSocket=undefined;
-
-}
-
-
-function onErrorWS(event) {
-    log("on error");
-    if (remoteMeConfig.webSocketConnectionChange){
-		remoteMeConfig.webSocketConnectionChange(false);
-    }
-
-};
-
-function onCloseWS(event) {
-    log("on close");
-
-	if (remoteMeConfig.webSocketConnectionChange){
-		remoteMeConfig.webSocketConnectionChange(false);
+	log(text) {
+		var now = (window.performance.now() / 1000).toFixed(3);
+		console.log(now + ': ', text);
 	}
 
-    disconnectWebRTC();
-};
 
-function onOpenWS(event) {
-    log("websocket connected");
-	if (remoteMeConfig.automaticlyConnectWebRTC){
-		connectWebRTC();
-	}
-	if (remoteMeConfig.webSocketConnectionChange){
-		remoteMeConfig.webSocketConnectionChange(true);
+	logTrace(text) {
+		//	var now = (window.performance.now() / 1000).toFixed(3);
+		//	console.debug(now + ': ', text);
 	}
 
-};
+
+	getWSUrl() {
+		var ret;
+		if (window.location.protocol == 'https') {
+			ret = "wss://";
+		} else {
+			ret = "ws://";
+		}
+		ret += window.location.host + "/api/ws/v1/" + thisDeviceId;
+		return ret;
+
+	}
 
 
-function onMessageWS(event) {
+	connectWebSocket() {
 
-    log(JSON.stringify(event));
-    var isWebrtcConfiguration = false;
-    {
-        ex=false;
-        log("got websocket config " )
-        try {
+		RemoteMe.thiz.log("connectiong WS");
+		RemoteMe.thiz.webSocket = new WebSocket(RemoteMe.thiz.getWSUrl());
+		RemoteMe.thiz.webSocket.binaryType = "arraybuffer";
+		RemoteMe.thiz.webSocket.onopen = RemoteMe.thiz.onOpenWS;
+		RemoteMe.thiz.webSocket.onmessage = RemoteMe.thiz.onMessageWS;
+		RemoteMe.thiz.webSocket.onerror = RemoteMe.thiz.onErrorWS;
+		RemoteMe.thiz.webSocket.onclose = RemoteMe.thiz.onCloseWS;
 
-            var dataJson = JSON.parse(event.data);
-
-        }
-        catch (e) {
-            ex=true;
-        }
-
-        if (!ex) {
-            if (dataJson["cmd"] == "send") {
-                isWebrtcConfiguration = true;
-                doHandlePeerMessage(dataJson["msg"]);
-            }
-        }
-    }
-
-    if (!isWebrtcConfiguration) {
-        var ret = new Object();
-
-        var bytearray = new Uint8Array(event.data);
-
-        ret.typeId = bytearray[0];
-        ret.renevalWhenFailTypeId = bytearray[1];
-        ret.receiveDeviceId = (bytearray[2] << 8) + bytearray[3];
-        ret.senderDeviceId = (bytearray[4] << 8) + bytearray[5];
-        ret.messageId = (bytearray[6] << 8) + bytearray[7];
-        ret.size = (bytearray[8] << 8) + bytearray[9];
-        var data = bytearray.subarray(10);
-        ret.data = Array.from(data);
-        ret.dataTExt = new TextDecoder("utf-8").decode(data);
+	}
 
 
-    }
+	restartWebSocket() {
+		if (this.isWebSocketConnected()) {
+			this.disconnectWebSocket();
+			setTimeout(this.connectWebSocket, 1000, this);
+		} else {
+			this.connectWebSocket();
+		}
 
-}
-
-
-
-
-
-function sendBinaryMessage() {
-    var http = new XMLHttpRequest();
-    var url = "http://127.0.0.1:8082/api/~1_ySKpyx+'G23/rest/v1/sender/getUserMessage/";
-    http.open("POST", url, true);
-
-    http.setRequestHeader("Content-type", "text/plain");
-    http.setRequestHeader("token", "~1_ySKpyx+'G23");
+	}
 
 
-    http.send("12345");
+	isWebSocketConnected() {
+		return this.webSocket != undefined && this.webSocket.readyState === this.webSocket.OPEN;
+	}
 
-}
+
+	disconnectWebSocket() {
+		if (this.isWebSocketConnected()) {
+			this.webSocket.close();
+		}
+		this.webSocket = undefined;
+
+	}
+
+
+	sendWebSocket(bytearray) {
+		if (this.isWebSocketConnected()) {
+			this.webSocket.send(bytearray.buffer);
+			return true;
+		} else {
+			this.log("websocket is not opened");
+			return false;
+		}
+	}
+
+
+	sendWebSocketText(text) {
+		if (this.isWebSocketConnected()) {
+			this.webSocket.send(text);
+			return true;
+		} else {
+			this.log("websocket is not opened");
+			return false;
+		}
+	}
+
+	sendWebRtc(bytearray) {
+		if (this.isWebRTCConnected()) {
+			this.openedChanel.send(bytearray.buffer)
+		} else {
+			this.log("webrtc channels is not opened")
+		}
+
+	}
+
+	onErrorWS(event) {
+		this.log("on error");
+		if (this.remoteMeConfig.webSocketConnectionChange) {
+			this.remoteMeConfig.webSocketConnectionChange(false);
+		}
+
+	};
+
+
+	onCloseWS(event) {
+		this.log("on close");
+
+		if (this.remoteMeConfig.webSocketConnectionChange) {
+			this.remoteMeConfig.webSocketConnectionChange(false);
+		}
+
+		disconnectWebRTC();
+	};
+
+
+	onOpenWS(event) {
+		RemoteMe.thiz.log("websocket connected");
+		if (RemoteMe.thiz.remoteMeConfig.automaticlyConnectWebRTC) {
+			RemoteMe.thiz.call(connectWebRTC());
+		}
+		if (RemoteMe.thiz.remoteMeConfig.webSocketConnectionChange) {
+			RemoteMe.thiz.remoteMeConfig.webSocketConnectionChange(true);
+		}
+
+	};
+
+
+	onMessageWS(event) {
+
+		RemoteMe.thiz.log(JSON.stringify(event));
+		var isWebrtcConfiguration = false;
+		{
+			var ex = false;
+			RemoteMe.thiz.log("got websocket config ")
+			try {
+
+				var dataJson = JSON.parse(event.data);
+
+			}
+			catch (e) {
+				ex = true;
+			}
+
+			if (!ex) {
+				if (dataJson["cmd"] == "send") {
+					RemoteMe.thiz.isWebrtcConfiguration = true;
+					RemoteMe.thiz.doHandlePeerMessage(dataJson["msg"]);
+				}
+			}
+		}
+
+		if (!isWebrtcConfiguration) {
+			var ret = new Object();
+
+			var bytearray = new Uint8Array(event.data);
+
+			ret.typeId = bytearray[0];
+			ret.renevalWhenFailTypeId = bytearray[1];
+			ret.receiveDeviceId = (bytearray[2] << 8) + bytearray[3];
+			ret.senderDeviceId = (bytearray[4] << 8) + bytearray[5];
+			ret.messageId = (bytearray[6] << 8) + bytearray[7];
+			ret.size = (bytearray[8] << 8) + bytearray[9];
+			var data = bytearray.subarray(10);
+			ret.data = Array.from(data);
+			ret.dataTExt = new TextDecoder("utf-8").decode(data);
+
+
+		}
+
+	}
+
+
+	sendBinaryMessage() {
+		var http = new XMLHttpRequest();
+		var url = "http://127.0.0.1:8082/api/~1_ySKpyx+'G23/rest/v1/sender/getUserMessage/";
+		http.open("POST", url, true);
+
+		http.setRequestHeader("Content-type", "text/plain");
+		http.setRequestHeader("token", "~1_ySKpyx+'G23");
+
+
+		http.send("12345");
+
+	}
 
 
 //--------------- webrtc
 
 
-function WebSocketSend(message) {
-    if (webSocket.readyState == WebSocket.OPEN ||
-        webSocket.readyState == WebSocket.CONNECTING) {
-        log("sending websocket :" + message);
-        webSocket.send(message);
-        // var data = new ArrayBuffer(message);
-        //var byteArray = new Uint8Array(message);
-        //websocket.send(byteArray.buffer);
-        return true;
-    }
-    log("failed to send :" + message);
-    return false;
-}
+	isWebRTCConnected() {
+		if ((this.peerConnection==undefined) || (this.openedChanel==undefined)){
+			return false;
+		}else{
+			return this.peerConnection.iceConnectionState == 'connected';
+		}
 
-function isWebRTCConnected(){
-    return openedChanel!=undefined;
-}
-
-function restartWebRTC(){
-	disconnectWebRTC();
-	connectWebRTC();
-}
-
-function connectWebRTC() {
-    if (!isWebSocketConnected()){
-        console.error("websocket is not connected cannot create webrtc connection");
-        return;
-    }
-    // No Room concept, random generate room and client id.
-    var register = {
-        cmd: 'register',
-        targetDeviceId:raspberryPiDeviceId
-    };
-    var register_message = JSON.stringify(register);
-    WebSocketSend(register_message);
-}
-
-function doSend(data) {
-    var message = {
-        cmd: "send",
-        msg: data,
-        error: "",
-        targetDeviceId:raspberryPiDeviceId
-    };
-    var data_message = JSON.stringify(message);
-    if (WebSocketSend(data_message) == false) {
-        log("Failed to send data: " + data_message);
-        return false;
-    }
-
-    return true;
-}
-
-function disconnectWebRTC() {
-
-	if (!isWebSocketConnected()){
-		console.error("websocket is not connected cannot disconnect  webrtc connection");
-		return;
 	}
 
-    var message = {
-        cmd: "disconnect",
-        msg: "",
-        error: "",
-        targetDeviceId:raspberryPiDeviceId
-    };
-    var data_message = JSON.stringify(message);
-    if (WebSocketSend(data_message) == false) {
-        log("Failed to send data: " + data_message);
-        return false;
-    }
 
-	openedChanel=undefined;
+	restartWebRTC() {
+		disconnectWebRTC();
+		connectWebRTC();
+	}
 
-}
+
+	connectWebRTC() {
+		if (!this.isWebSocketConnected()) {
+			console.error("websocket is not connected cannot create webrtc connection");
+			return;
+		}
+		// No Room concept, random generate room and client id.
+		var register = {
+			cmd: 'register',
+			targetDeviceId: raspberryPiDeviceId
+		};
+		var register_message = JSON.stringify(register);
+		this.sendWebSocketText(register_message);
+	}
+
+
+	doSend(data) {
+		var message = {
+			cmd: "send",
+			msg: data,
+			error: "",
+			targetDeviceId: raspberryPiDeviceId
+		};
+		var data_message = JSON.stringify(message);
+		if (RemoteMe.thiz.sendWebSocketText(data_message) == false) {
+			RemoteMe.thiz.log("Failed to send data: " + data_message);
+			return false;
+		}
+
+		return true;
+	}
+
+
+	disconnectWebRTC() {
+
+		if (!this.isWebSocketConnected()) {
+			console.error("websocket is not connected cannot disconnect  webrtc connection");
+			return;
+		}
+
+		var message = {
+			cmd: "disconnect",
+			msg: "",
+			error: "",
+			targetDeviceId: raspberryPiDeviceId
+		};
+		var data_message = JSON.stringify(message);
+		if (this.sendWebSocketText(data_message) == false) {
+			this.log("Failed to send data: " + data_message);
+			return false;
+		}
+
+		this.openedChanel = undefined;
+
+	}
 
 //PEER conenction
-var openedChanel=undefined;
-var messageCounter = 0;
-var peerConnection;
-var pcConfig = {"iceServers": [{"urls": "stun:stun.l.google.com:19302"}]};
-var pcOptions = { optional: [ {DtlsSrtpKeyAgreement: true} ] };
-var mediaConstraints = {'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true }};
-var remoteStream;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 // PeerConnection
 //
 ///////////////////////////////////////////////////////////////////////////////
-function createPeerConnection() {
 
-        peerConnection = new RTCPeerConnection(pcConfig, pcOptions);
-        peerConnection.onicecandidate = function(event) {
-            if (event.candidate) {
-                var candidate = { type: 'candidate',
-                    label: event.candidate.sdpMLineIndex,
-                    id: event.candidate.sdpMid,
-                    candidate: event.candidate.candidate
-                };
-                doSend(JSON.stringify(candidate));
-            } else {
-                logTrace("End of candidates.");
-            }
-        };
-        peerConnection.onconnecting = onSessionConnecting;
-        peerConnection.onopen = onSessionOpened;
-        peerConnection.ontrack = onRemoteStreamAdded;
-        peerConnection.onremovestream = onRemoteStreamRemoved;
-        peerConnection.ondatachannel =onDataChannel;
+	createPeerConnection() {
 
-        logTrace("Created RTCPeerConnnection with config: " + JSON.stringify(pcConfig));
+		this.peerConnection = new RTCPeerConnection(this.remoteMeConfig.pcConfig, this.remoteMeConfig.pcOptions);
+		this.peerConnection.oniceconnectionstatechange = function () {
+			if (RemoteMe.thiz.remoteMeConfig.webRTCConnectionChange) {
+				if (RemoteMe.thiz.peerConnection.iceConnectionState == 'disconnected' || RemoteMe.thiz.peerConnection.iceConnectionState == 'failed') {
+					RemoteMe.thiz.remoteMeConfig.webRTCConnectionChange(false);
+					this.openedChanel=null;
+				} else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'connected') {
+					RemoteMe.thiz.remoteMeConfig.webRTCConnectionChange(true);
+				}
+			}
+			RemoteMe.thiz.log("webrtc connection status changed" + RemoteMe.thiz.peerConnection.iceConnectionState)
+		}
+		this.peerConnection.onicecandidate = function (event) {
+			if (event.candidate) {
+				var candidate = {
+					type: 'candidate',
+					label: event.candidate.sdpMLineIndex,
+					id: event.candidate.sdpMid,
+					candidate: event.candidate.candidate
+				};
+				RemoteMe.thiz.doSend(JSON.stringify(candidate));
+			} else {
+				RemoteMe.thiz.logTrace("End of candidates.");
+			}
+		};
+		this.peerConnection.onconnecting = this.onSessionConnecting;
+		this.peerConnection.onopen = this.onSessionOpened;
+		this.peerConnection.ontrack = this.onRemoteStreamAdded;
+		this.peerConnection.onremovestream = this.onRemoteStreamRemoved;
+		this.peerConnection.ondatachannel = this.onDataChannel;
+
+		this.logTrace("Created RTCPeerConnnection with config: " + JSON.stringify(this.remoteMeConfig.pcConfig));
 
 
-}
-
-
-function onDataChannel(event){
-    openedChanel=event.channel;
-
-    logTrace("on data channel "+event.channel.label);
-	if (remoteMeConfig.webRTCConnectionChange){
-		remoteMeConfig.webRTCConnectionChange(true);
 	}
 
-	event.channel.onclose = function() {
-		console.log("on data channel close  ");
+
+	onDataChannel(event) {
+		RemoteMe.thiz.openedChanel = event.channel;
+
+		RemoteMe.thiz.logTrace("on data channel " + event.channel.label);
+
+
+		/*event.channel.onclose = function () {
+			RemoteMe.thiz.log("on data channel close  ");
+			if (RemoteMe.thiz.remoteMeConfig.webRTCConnectionChange) {
+				RemoteMe.thiz.remoteMeConfig.webRTCConnectionChange(false);
+			}
+		};*/
+		event.channel.onmessage = function (e) {
+			RemoteMe.thiz.log("on Message " + e);
+		}
+	}
+
+
+	onRemoteStreamAdded(event) {
+		RemoteMe.thiz.logTrace("Remote stream added:", event.streams);
+		var remoteVideoElement = document.getElementById('remoteVideo');
+		remoteVideo.srcObject = event.streams[0];
+	}
+
+
+	sld_success_cb() {
+		RemoteMe.thiz.logTrace("setLocalDescription success");
+	}
+
+
+	sld_failure_cb() {
+		RemoteMe.thiz.logTrace("setLocalDescription failed");
+	}
+
+
+	aic_success_cb() {
+		RemoteMe.thiz.logTrace("addIceCandidate success");
+	}
+
+
+	aic_failure_cb(x) {
+		RemoteMe.thiz.logTrace("addIceCandidate failed", x);
+	}
+
+
+	doHandlePeerMessage(data) {
+		++this.messageCounter;
+		var dataJson = JSON.parse(data);
+		this.logTrace("Handle Message :", JSON.stringify(dataJson));
+
+
+		if (dataJson["type"] == "offer") {        // Processing offer
+			this.logTrace("Offer from PeerConnection");
+			var sdp_returned = this.forceChosenVideoCodec(dataJson.sdp, 'H264/90000');
+			dataJson.sdp = sdp_returned;
+			// Creating PeerConnection
+			this.createPeerConnection();
+			this.peerConnection.setRemoteDescription(new RTCSessionDescription(dataJson), this.onRemoteSdpSucces, this.onRemoteSdpError);
+			this.peerConnection.createAnswer(function (sessionDescription) {
+
+				RemoteMe.thiz.logTrace("Create answer:", sessionDescription);
+				RemoteMe.thiz.peerConnection.setLocalDescription(sessionDescription, RemoteMe.thiz.sld_success_cb, RemoteMe.thiz.sld_failure_cb);
+				var data = JSON.stringify(sessionDescription);
+				RemoteMe.thiz.logTrace("Sending Answer: " + data);
+				RemoteMe.thiz.doSend(data);
+			}, function (error) { // error
+				this.logTrace("Create answer error:", error);
+			}, this.remoteMeConfig.mediaConstraints); // type error
+		}
+		else if (dataJson["type"] == "candidate") {    // Processing candidate
+			this.logTrace("Adding ICE candiate " + dataJson["candidate"]);
+
+			var candidate = new RTCIceCandidate({sdpMLineIndex: dataJson.label, candidate: dataJson.candidate});
+			this.peerConnection.addIceCandidate(candidate, this.aic_success_cb, this.aic_failure_cb);
+
+			this.logTrace("sdpMLineIndex is null >>>>>> " + dataJson.sdpMLineIndex);
+
+
+		}
+	}
+
+
+	onSessionConnecting(message) {
+		this.logTrace("Session connecting.");
+
+	}
+
+
+	onSessionOpened(message) {
+		this.logTrace("Session opened.");
+
+	}
+
+
+	onRemoteStreamRemoved(event) {
+		this.logTrace("Remote stream removed.");
+
+	}
+
+
+	onRemoteSdpError(event) {
+		console.error('onRemoteSdpError', event.name, event.message);
 		if (remoteMeConfig.webRTCConnectionChange) {
 			remoteMeConfig.webRTCConnectionChange(false);
 		}
-	};
-    event.channel.onmessage=function(e){
-        console.log("on Message "+e);
-    }
-}
-
-function onRemoteStreamAdded(event) {
-    logTrace("Remote stream added:", event.streams );
-    var remoteVideoElement = document.getElementById('remoteVideo');
-    remoteVideo.srcObject = event.streams[0];
-}
-
-function sld_success_cb() {
-    logTrace("setLocalDescription success");
-}
-
-function sld_failure_cb() {
-    logTrace("setLocalDescription failed");
-}
-
-function aic_success_cb() {
-    logTrace("addIceCandidate success");
-}
-
-function aic_failure_cb(x) {
-    logTrace("addIceCandidate failed",x);
-}
-
-
-function doHandlePeerMessage(data) {
-    ++messageCounter;
-    var dataJson = JSON.parse(data);
-    logTrace("Handle Message :", JSON.stringify(dataJson));
-
-
-
-    if (dataJson["type"] == "offer" ) {        // Processing offer
-        logTrace("Offer from PeerConnection" );
-        var sdp_returned = forceChosenVideoCodec(dataJson.sdp, 'H264/90000');
-        dataJson.sdp = sdp_returned;
-        // Creating PeerConnection
-        createPeerConnection();
-        peerConnection.setRemoteDescription(new RTCSessionDescription(dataJson), onRemoteSdpSucces, onRemoteSdpError);
-        peerConnection.createAnswer(function(sessionDescription) {
-            logTrace("Create answer:", sessionDescription);
-            peerConnection.setLocalDescription(sessionDescription,sld_success_cb,sld_failure_cb);
-            var data = JSON.stringify(sessionDescription);
-            logTrace("Sending Answer: " + data );
-            doSend(data);
-        }, function(error) { // error
-            logTrace("Create answer error:", error);
-        }, mediaConstraints); // type error
-    }
-    else if (dataJson["type"] == "candidate" ) {    // Processing candidate
-        logTrace("Adding ICE candiate " + dataJson["candidate"]);
-
-            var candidate = new RTCIceCandidate({sdpMLineIndex: dataJson.label, candidate: dataJson.candidate});
-            peerConnection.addIceCandidate(candidate, aic_success_cb, aic_failure_cb);
-
-            logTrace("sdpMLineIndex is null >>>>>> "+dataJson.sdpMLineIndex);
-
-
-    }
-}
-
-function onSessionConnecting(message) {
-    logTrace("Session connecting.");
-
-}
-
-function onSessionOpened(message) {
-    logTrace("Session opened.");
-
-}
-
-function onRemoteStreamRemoved(event) {
-    logTrace("Remote stream removed.");
-
-}
-
-function onRemoteSdpError(event) {
-    console.error('onRemoteSdpError', event.name, event.message);
-	if (remoteMeConfig.webRTCConnectionChange){
-		remoteMeConfig.webRTCConnectionChange(false);
 	}
-}
-
-function onRemoteSdpSucces() {
-    logTrace('onRemoteSdpSucces');
-
-}
 
 
-function forceChosenVideoCodec(sdp, codec) {
-    return maybePreferCodec(sdp, 'video', 'send', codec);
-}
+	onRemoteSdpSucces() {
+		RemoteMe.thiz.logTrace('onRemoteSdpSucces');
 
-function forceChosenAudioCodec(sdp, codec) {
-    return maybePreferCodec(sdp, 'audio', 'send', codec);
-}
+	}
+
+
+	forceChosenVideoCodec(sdp, codec) {
+		return this.maybePreferCodec(sdp, 'video', 'send', codec);
+	}
+
+
+	forceChosenAudioCodec(sdp, codec) {
+		return this.maybePreferCodec(sdp, 'audio', 'send', codec);
+	}
 
 // Copied from AppRTC's sdputils.js:
 
 // Sets |codec| as the default |type| codec if it's present.
 // The format of |codec| is 'NAME/RATE', e.g. 'opus/48000'.
-function maybePreferCodec(sdp, type, dir, codec) {
-    var str = type + ' ' + dir + ' codec';
-    if (codec === '') {
-        logTrace('No preference on ' + str + '.');
-        return sdp;
-    }
 
-    logTrace('Prefer ' + str + ': ' + codec);	// kclyu
 
-    var sdpLines = sdp.split('\r\n');
+	maybePreferCodec(sdp, type, dir, codec) {
+		var str = type + ' ' + dir + ' codec';
+		if (codec === '') {
+			this.logTrace('No preference on ' + str + '.');
+			return sdp;
+		}
 
-    // Search for m line.
-    var mLineIndex = findLine(sdpLines, 'm=', type);
-    if (mLineIndex === null) {
-        logTrace('* not found error: ' + str + ': ' + codec );	// kclyu
-        return sdp;
-    }
+		this.logTrace('Prefer ' + str + ': ' + codec);	// kclyu
 
-    // If the codec is available, set it as the default in m line.
-    var codecIndex = findLine(sdpLines, 'a=rtpmap', codec);
-    logTrace('mLineIndex Line: ' +  sdpLines[mLineIndex] );
-    logTrace('found Prefered Codec in : ' + codecIndex + ': ' + sdpLines[codecIndex] );
-    logTrace('codecIndex', codecIndex);
-    if (codecIndex) {
-        var payload = getCodecPayloadType(sdpLines[codecIndex]);
-        if (payload) {
-            sdpLines[mLineIndex] = setDefaultCodec(sdpLines[mLineIndex], payload);
-            //sdpLines[mLineIndex] = setDefaultCodecAndRemoveOthers(sdpLines, sdpLines[mLineIndex], payload);
-        }
-    }
+		var sdpLines = sdp.split('\r\n');
 
-    // delete id 100(VP8) and 101(VP8)
+		// Search for m line.
+		var mLineIndex = this.findLine(sdpLines, 'm=', type);
+		if (mLineIndex === null) {
+			this.logTrace('* not found error: ' + str + ': ' + codec);	// kclyu
+			return sdp;
+		}
 
-    logTrace('** Modified LineIndex Line: ' +  sdpLines[mLineIndex] );
-    sdp = sdpLines.join('\r\n');
-    return sdp;
-}
+		// If the codec is available, set it as the default in m line.
+		var codecIndex = this.findLine(sdpLines, 'a=rtpmap', codec);
+		this.logTrace('mLineIndex Line: ' + sdpLines[mLineIndex]);
+		this.logTrace('found Prefered Codec in : ' + codecIndex + ': ' + sdpLines[codecIndex]);
+		this.logTrace('codecIndex', codecIndex);
+		if (codecIndex) {
+			var payload = this.getCodecPayloadType(sdpLines[codecIndex]);
+			if (payload) {
+				sdpLines[mLineIndex] = this.setDefaultCodec(sdpLines[mLineIndex], payload);
+				//sdpLines[mLineIndex] = setDefaultCodecAndRemoveOthers(sdpLines, sdpLines[mLineIndex], payload);
+			}
+		}
+
+		// delete id 100(VP8) and 101(VP8)
+
+		this.logTrace('** Modified LineIndex Line: ' + sdpLines[mLineIndex]);
+		sdp = sdpLines.join('\r\n');
+		return sdp;
+	}
 
 // Find the line in sdpLines that starts with |prefix|, and, if specified,
 // contains |substr| (case-insensitive search).
-function findLine(sdpLines, prefix, substr) {
-    return findLineInRange(sdpLines, 0, -1, prefix, substr);
-}
+
+
+	findLine(sdpLines, prefix, substr) {
+		return this.findLineInRange(sdpLines, 0, -1, prefix, substr);
+	}
 
 // Find the line in sdpLines[startLine...endLine - 1] that starts with |prefix|
 // and, if specified, contains |substr| (case-insensitive search).
-function findLineInRange(sdpLines, startLine, endLine, prefix, substr) {
-    var realEndLine = endLine !== -1 ? endLine : sdpLines.length;
-    for (var i = startLine; i < realEndLine; ++i) {
-        if (sdpLines[i].indexOf(prefix) === 0) {
-            if (!substr ||
-                sdpLines[i].toLowerCase().indexOf(substr.toLowerCase()) !== -1) {
-                return i;
-            }
-        }
-    }
-    return null;
-}
+
+
+	findLineInRange(sdpLines, startLine, endLine, prefix, substr) {
+		var realEndLine = endLine !== -1 ? endLine : sdpLines.length;
+		for (var i = startLine; i < realEndLine; ++i) {
+			if (sdpLines[i].indexOf(prefix) === 0) {
+				if (!substr ||
+					sdpLines[i].toLowerCase().indexOf(substr.toLowerCase()) !== -1) {
+					return i;
+				}
+			}
+		}
+		return null;
+	}
 
 // Gets the codec payload type from an a=rtpmap:X line.
-function getCodecPayloadType(sdpLine) {
-    var pattern = new RegExp('a=rtpmap:(\\d+) \\w+\\/\\d+');
-    var result = sdpLine.match(pattern);
-    return (result && result.length === 2) ? result[1] : null;
-}
+
+
+	getCodecPayloadType(sdpLine) {
+		var pattern = new RegExp('a=rtpmap:(\\d+) \\w+\\/\\d+');
+		var result = sdpLine.match(pattern);
+		return (result && result.length === 2) ? result[1] : null;
+	}
 
 // Returns a new m= line with the specified codec as the first one.
-function setDefaultCodec(mLine, payload) {
-    var elements = mLine.split(' ');
-
-    // Just copy the first three parameters; codec order starts on fourth.
-    var newLine = elements.slice(0, 3);
-
-    // Put target payload first and copy in the rest.
-    newLine.push(payload);
-    for (var i = 3; i < elements.length; i++) {
-        if (elements[i] !== payload) {
-            newLine.push(elements[i]);
-        }
-    }
-    return newLine.join(' ');
-}
 
 
-function setDefaultCodecAndRemoveOthers(sdpLines, mLine, payload) {
-    var elements = mLine.split(' ');
+	setDefaultCodec(mLine, payload) {
+		var elements = mLine.split(' ');
 
-    // Just copy the first three parameters; codec order starts on fourth.
-    var newLine = elements.slice(0, 3);
+		// Just copy the first three parameters; codec order starts on fourth.
+		var newLine = elements.slice(0, 3);
+
+		// Put target payload first and copy in the rest.
+		newLine.push(payload);
+		for (var i = 3; i < elements.length; i++) {
+			if (elements[i] !== payload) {
+				newLine.push(elements[i]);
+			}
+		}
+		return newLine.join(' ');
+	}
 
 
-    // Put target payload first and copy in the rest.
-    newLine.push(payload);
-    for (var i = 3; i < elements.length; i++) {
-        if (elements[i] !== payload) {
+	setDefaultCodecAndRemoveOthers(sdpLines, mLine, payload) {
+		var elements = mLine.split(' ');
 
-            //  continue to remove all matching lines
-            for(var line_removed = true;line_removed;) {
-                line_removed = RemoveLineInRange(sdpLines, 0, -1, "a=rtpmap", elements[i] );
-            }
-            //  continue to remove all matching lines
-            for(var line_removed = true;line_removed;) {
-                line_removed = RemoveLineInRange(sdpLines, 0, -1, "a=rtcp-fb", elements[i] );
-            }
-        }
-    }
-    return newLine.join(' ');
-}
+		// Just copy the first three parameters; codec order starts on fourth.
+		var newLine = elements.slice(0, 3);
 
-function RemoveLineInRange(sdpLines, startLine, endLine, prefix, substr) {
-    var realEndLine = endLine !== -1 ? endLine : sdpLines.length;
-    for (var i = startLine; i < realEndLine; ++i) {
-        if (sdpLines[i].indexOf(prefix) === 0) {
-            if (!substr ||
-                sdpLines[i].toLowerCase().indexOf(substr.toLowerCase()) !== -1) {
-                var str = "Deleting(index: " + i + ") : " + sdpLines[i];
-                logTrace(str);
-                sdpLines.splice(i, 1);
-                return true;
-            }
-        }
-    }
-    return false;
-}
 
+		// Put target payload first and copy in the rest.
+		newLine.push(payload);
+		for (var i = 3; i < elements.length; i++) {
+			if (elements[i] !== payload) {
+
+				//  continue to remove all matching lines
+				for (var line_removed = true; line_removed;) {
+					line_removed = RemoveLineInRange(sdpLines, 0, -1, "a=rtpmap", elements[i]);
+				}
+				//  continue to remove all matching lines
+				for (var line_removed = true; line_removed;) {
+					line_removed = RemoveLineInRange(sdpLines, 0, -1, "a=rtcp-fb", elements[i]);
+				}
+			}
+		}
+		return newLine.join(' ');
+	}
+
+
+	RemoveLineInRange(sdpLines, startLine, endLine, prefix, substr) {
+		var realEndLine = endLine !== -1 ? endLine : sdpLines.length;
+		for (var i = startLine; i < realEndLine; ++i) {
+			if (sdpLines[i].indexOf(prefix) === 0) {
+				if (!substr ||
+					sdpLines[i].toLowerCase().indexOf(substr.toLowerCase()) !== -1) {
+					var str = "Deleting(index: " + i + ") : " + sdpLines[i];
+					this.logTrace(str);
+					sdpLines.splice(i, 1);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 
 
 //PEER connection closed
@@ -548,85 +609,26 @@ function RemoveLineInRange(sdpLines, startLine, endLine, prefix, substr) {
 
 // functions for users
 
-function sendUserMessage(receiveDeviceId,data){
-	sendWebSocket(getUserMessage(WSUserMessageSettings.NO_RENEWAL,receiveDeviceId,thisDeviceId, 0,data));
-}
 
-
-function sendUserMessageWebrtc(receiveDeviceId,data){
-	sendWebRtc(getUserMessage(WSUserMessageSettings.NO_RENEWAL,receiveDeviceId,thisDeviceId, 0,data));
-}
-
-function test0(){
-
-	console.info(this);
-	console.info("no arguments");
-}
-function test1(a){
-	console.info(a);
-}
-function test2(a,b){
-    console.info(a+" "+b);
-}
-
-
-class OperationTimer{
-
-
-	constructor(defaultDelay) {
-		this.toExecute = [];
-		this.executeDelay = [];
-		this.timers = [];
-
-		if (defaultDelay==undefined){
-		    this.defaultDelay=10;
-        }else{
-			this.defaultDelay=defaultDelay;
-        }
-	}
-
-	setDelayForOperationId(operationId,delay){
-		this.executeDelay[operationId]=delay;
-	}
-
-	executeWithThis(operationId,fun,thiz, ...parameters){
-        if (this.timers[operationId]==undefined){//for first time we call it immidetly
-			fun.apply	(thiz,parameters);
-			this.setTimeout(this,operationId);// we set timepout but nothing to execute
-        }else{
-			this.toExecute[operationId]={'fun':fun,'thiz':thiz,'parameters':parameters};
-			console.info("added to execute later");
-        }
-
-
-
-	}
-    execute(operationId,fun, ...parameters){
-		this.executeWithThis(operationId,fun,undefined,parameters);
-
-    }
-
-    setTimeout(thiz,operationId){
-		var delayOfCurrent=thiz.executeDelay[operationId];
-		if (delayOfCurrent==undefined){
-			delayOfCurrent= thiz.defaultDelay;
+	sendUserMessageByFasterChannel(receiveDeviceId, data) {
+		if (this.isWebRTCConnected()) {
+			this.sendWebRtc(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data))
+		} else {
+			this.sendWebSocket(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
 		}
-		thiz.timers[operationId]=setTimeout(thiz.executeNow,delayOfCurrent,thiz,operationId);
+
 	}
 
-	executeNow(thiz,operationId){
 
-        var toExecute=thiz.toExecute[operationId];
+	sendUserMessage(receiveDeviceId, data) {
+		this.sendWebSocket(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
+	}
 
-		thiz.toExecute[operationId]=undefined;
 
-        if (toExecute!=undefined){
-            toExecute.fun.apply(toExecute.thiz,toExecute.parameters);
-			thiz.setTimeout(thiz,operationId);
-        }else{
-			thiz.timers[operationId]=undefined;//so we call it again after some time of next execituin
-		}
-    }
+	sendUserMessageWebrtc(receiveDeviceId, data) {
+		this.sendWebRtc(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
+	}
+
 
 }
 

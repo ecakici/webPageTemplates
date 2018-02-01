@@ -228,18 +228,18 @@ function setupComponents(){
 
 
 	$('#webSocketState').on('click', function() {
-		if (isWebSocketConnected()){
-			disconnectWebSocket();
+		if (remoteme.isWebSocketConnected()){
+			remoteme.disconnectWebSocket();
 		}else{
-			connectWebSocket();
+			remoteme.connectWebSocket();
 		}
 
 	});
 	$('#webRTCState').on('click', function() {
-		if (isWebRTCConnected()){
-			disconnectWebRTC();
+		if (remoteme.isWebRTCConnected()){
+			remoteme.disconnectWebRTC();
 		}else{
-			connectWebRTC();
+			remoteme.connectWebRTC();
 		}
 	});
 
@@ -249,14 +249,12 @@ function setupComponents(){
 }
 counter=0;
 
-function isWebRtc(){
-	return $('#messageMode > .active').attr("webrtc");
-}
+
 
 
 
 function setDrive(){
-	if  (isWebRtc()){
+	if  (remoteme.isWebRTCConnected()){
 		ot.defaultDelay=150;
 	}else{
 		ot.defaultDelay=400;
@@ -265,7 +263,7 @@ function setDrive(){
 }
 
 function setCamera(){
-	if  (isWebRtc()){
+	if  (remoteme.isWebRTCConnected()){
 		ot.defaultDelay=150;
 	}else{
 		ot.defaultDelay=400;
@@ -292,12 +290,7 @@ function setCameraNow() {
 	pos=putShort(ret, pos ,carController.getCameraY() );
 
 
-	if  (isWebRtc()){
-		sendUserMessageWebrtc(carScriptDeviceId,ret);
-	}else{
-		sendUserMessage(carScriptDeviceId,ret);
-
-	}
+	remoteme.sendUserMessageByFasterChannel(carScriptDeviceId,ret);
 }
 
 
@@ -322,12 +315,7 @@ function setDriveNow() {
 	pos=putByte(ret, pos ,carController.getRightSideSpeed() );
 
 
-	if  (isWebRtc()){
-		sendUserMessageWebrtc(carScriptDeviceId,ret);
-	}else{
-		sendUserMessage(carScriptDeviceId,ret);
-
-	}
+	remoteme.sendUserMessageByFasterChannel(carScriptDeviceId,ret);
 }
 
 
