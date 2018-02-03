@@ -648,11 +648,16 @@ class RemoteMe {
 
 
 	sendUserMessageByFasterChannel(receiveDeviceId, data) {
-		if (this.isWebRTCConnected()) {
-			this.sendWebRtc(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data))
-		} else {
-			this.sendWebSocket(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
+		if (pythonScriptDeviceId>0){
+			if (this.isWebRTCConnected()) {
+				this.sendWebRtc(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data))
+			} else {
+				this.sendWebSocket(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
+			}
+		}else{
+			console.error("Cannot send message to deviceId with this id, did You configure your script correct ?");
 		}
+
 
 	}
 
