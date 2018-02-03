@@ -16,24 +16,32 @@
 }
 
 
-
-
 .led{
     width: 100px;
     height: 100px;
-    border: 2px solid #b53030;
     float: left;
     margin: 10px;
     border-radius: 100px;
     cursor: pointer;
 }
 
-.led.on{
+
+.ledRed{
+    border: 2px solid #b53030;
+}
+
+.ledRed.on{
     background-color: red;
 }
 
 
+.ledGreen{
+    border: 2px solid #00b51c;
+}
 
+.ledGreen.on{
+    background-color: #00f91f;
+}
 
 
 

@@ -330,10 +330,10 @@ function setDriveNow() {
 
 function webSocketConnectionChange(state){
 	console.info("webosvcket change "+state);
-	if (state){
+	if (state==WebsocketConnectingStatusEnum.CONNECTED) {
 		$("#webSocketState").removeClass('btn-secondary');
 		$("#webSocketState").addClass('btn-success');
-	}else{
+	}else if (state==WebsocketConnectingStatusEnum.DISCONNECTED || state==WebsocketConnectingStatusEnum.ERROR){
 		$("#webSocketState").removeClass('btn-success');
 		$("#webSocketState").addClass('btn-secondary');
 	}

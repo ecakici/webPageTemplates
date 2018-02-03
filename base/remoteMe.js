@@ -5,7 +5,12 @@ WebrtcConnectingStatusEnum ={
 	CONNECTING:3,
 	DISCONNECTING:4,
 	CHECKING:5
-}
+};
+WebsocketConnectingStatusEnum ={
+	CONNECTED :0,
+	DISCONNECTED:1,
+	ERROR:2,
+};
 
 
 class RemoteMe {
@@ -76,13 +81,13 @@ class RemoteMe {
 
 	connectWebSocket() {
 
-		RemoteMe.thiz.log("connectiong WS");
-		RemoteMe.thiz.webSocket = new WebSocket(RemoteMe.thiz.getWSUrl());
-		RemoteMe.thiz.webSocket.binaryType = "arraybuffer";
-		RemoteMe.thiz.webSocket.onopen = RemoteMe.thiz.onOpenWS;
-		RemoteMe.thiz.webSocket.onmessage = RemoteMe.thiz.onMessageWS;
-		RemoteMe.thiz.webSocket.onerror = RemoteMe.thiz.onErrorWS;
-		RemoteMe.thiz.webSocket.onclose = RemoteMe.thiz.onCloseWS;
+		this.log("connectiong WS");
+		this.webSocket = new WebSocket(RemoteMe.thiz.getWSUrl());
+		this.webSocket.binaryType = "arraybuffer";
+		this.webSocket.onopen = this.onOpenWS.bind(this);
+		this.webSocket.onmessage = this.onMessageWS.bind(this);
+		this.webSocket.onerror = this.onErrorWS.bind(this);
+		this.webSocket.onclose = this.onCloseWS.bind(this);
 
 	}
 
@@ -90,7 +95,7 @@ class RemoteMe {
 	restartWebSocket() {
 		if (this.isWebSocketConnected()) {
 			this.disconnectWebSocket();
-			setTimeout(this.connectWebSocket, 1000, this);
+			setTimeout(this.connectWebSocket.bind(this), 1000);
 		} else {
 			this.connectWebSocket();
 		}
@@ -145,7 +150,7 @@ class RemoteMe {
 	onErrorWS(event) {
 		this.log("on error");
 		if (this.remoteMeConfig.webSocketConnectionChange) {
-			this.remoteMeConfig.webSocketConnectionChange(false);
+			this.remoteMeConfig.webSocketConnectionChange(WebsocketConnectingStatusEnum.ERROR);
 		}
 
 	};
@@ -155,22 +160,22 @@ class RemoteMe {
 		this.log("on close");
 
 		if (this.remoteMeConfig.webSocketConnectionChange) {
-			this.remoteMeConfig.webSocketConnectionChange(false);
+			this.remoteMeConfig.webSocketConnectionChange(WebsocketConnectingStatusEnum.DISCONNECTED);
 		}
 
-		disconnectWebRTC();
+
 	};
 
 
 	onOpenWS(event) {
-		RemoteMe.thiz.log("websocket connected");
-		if (RemoteMe.thiz.remoteMeConfig.automaticlyConnectWebRTC) {
+		this.log("websocket connected");
+		if (this.remoteMeConfig.automaticlyConnectWebRTC) {
 			setTimeout(function () {
-				RemoteMe.thiz.connectWebRTC();
+				this.connectWebRTC();
 			}.bind(this),1000);
 		}
-		if (RemoteMe.thiz.remoteMeConfig.webSocketConnectionChange) {
-			RemoteMe.thiz.remoteMeConfig.webSocketConnectionChange(true);
+		if (this.remoteMeConfig.webSocketConnectionChange) {
+			this.remoteMeConfig.webSocketConnectionChange(WebsocketConnectingStatusEnum.CONNECTED);
 		}
 
 	};
@@ -178,11 +183,11 @@ class RemoteMe {
 
 	onMessageWS(event) {
 
-		RemoteMe.thiz.log(JSON.stringify(event));
+		this.log(JSON.stringify(event));
 		var isWebrtcConfiguration = false;
 		{
 			var ex = false;
-			RemoteMe.thiz.log("got websocket config ")
+			this.log("got websocket config ")
 			try {
 
 				var dataJson = JSON.parse(event.data);
@@ -194,8 +199,8 @@ class RemoteMe {
 
 			if (!ex) {
 				if (dataJson["cmd"] == "send") {
-					RemoteMe.thiz.isWebrtcConfiguration = true;
-					RemoteMe.thiz.doHandlePeerMessage(dataJson["msg"]);
+					this.isWebrtcConfiguration = true;
+					this.doHandlePeerMessage(dataJson["msg"]);
 				}
 			}
 		}
@@ -254,8 +259,8 @@ class RemoteMe {
 	}
 
 	onWebrtcChange(status) {
-		if (RemoteMe.thiz.remoteMeConfig.webRTCConnectionChange){
-			RemoteMe.thiz.remoteMeConfig.webRTCConnectionChange(status);
+		if (this.remoteMeConfig.webRTCConnectionChange){
+			this.remoteMeConfig.webRTCConnectionChange(status);
 		}
 	}
 
