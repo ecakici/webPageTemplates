@@ -1,6 +1,6 @@
 
 
-
+var ot;
 
 var components=[];
 
@@ -10,54 +10,49 @@ function setupComponents(){
 		servoId=parseInt($(this).attr("servoId"));
 
 
-		var sliderComponent =$(this).find( ".slider" ).slider({
-			formatter: function (value) {
-				return 'Current value: ' + value;
-			}
-		});
+		var sliderComponent =$(this).find( ".slider" ).slider();
 
 
 		var spinnerComponent=$(this).find( ".spinner" );
 
+
 		sliderComponent.on('slide',onSlide).data({"servoId":servoId});
-
-		//spinnerComponent.change(onSpin);
-
-
 		spinnerComponent.bind('keyup mouseup',onSpin);
 
 		components[servoId]={spinner:spinnerComponent,
 			slider:sliderComponent,value:0};
+
+
 	});
 
-
-	$('#messageMode button').on('click', function() {
-		$('#messageMode button').removeClass('active')
-		$(this).addClass('active');
+	ot=new OperationTimer(200);
+	remoteme = new RemoteMe({
+		automaticlyConnectWS: true,
+		automaticlyConnectWebRTC:false,
+		webSocketConnectionChange: webSocketConnectionChange,
+		webRTCConnectionChange: webRtcConnectionChange,
+		mediaConstraints: {'mandatory': {'OfferToReceiveAudio': false, 'OfferToReceiveVideo': false}}
 	});
 
-	$('#webSocketState').on('click', function() {
-		if (isWebSocketConnected()){
-			disconnectWebSocket();
+	$('#websocketButton').on('click', function() {
+		if (remoteme.isWebSocketConnected()) {
+			remoteme.disconnectWebSocket();
 		}else{
-			connectWebSocket();
+			remoteme.connectWebSocket();
 		}
 
 	});
-	$('#webRTCState').on('click', function() {
-		if (isWebRTCConnected()){
-			disconnectWebRTC();
+	$('#webRtcButton').on('click', function() {
+		if (remoteme.isWebRTCConnected()) {
+			remoteme.disconnectWebRTC();
 		}else{
-			connectWebRTC();
+			remoteme.connectWebRTC();
 		}
 	});
 
+
 }
 
-
-function isWebRtc(){
-	return $('#messageMode > .active').attr("webrtc");
-}
 
 function onSpin(event){
 	var servoId=parseInt($(this.parentElement).attr('servoId'));
@@ -85,15 +80,14 @@ function onSlide(event){
 var timeoutsByServo=[];
 function setServo(servoId){
 
-	var timeout;
-	if (isWebRtc()){
-		timeout=30;
+	if  (remoteme.isWebRTCConnected()){
+		ot.defaultDelay=150;
 	}else{
-		timeout=50;
+		ot.defaultDelay=400;
 	}
+	ot.execute("setServo",setServoNow,servoId)
 
-	clearTimeout(timeoutsByServo[servoId]);
-	timeoutsByServo[servoId]=setTimeout( setServoNow,timeout,servoId);
+
 }
 
 function setServoNow(servoId) {
@@ -107,35 +101,46 @@ function setServoNow(servoId) {
 	pos=putByte(ret, pos ,servoId );
 	pos=putShort(ret, pos ,value );
 
-	if  (isWebRtc()){
-		sendUserMessageWebrtc(444,ret);
-	}else{
-		sendUserMessage(444,ret);
 
-	}
+
+	remoteme.sendUserMessageByFasterChannel(servoPythonDeviceId,ret);
 }
-
 
 
 function webSocketConnectionChange(state){
-	console.info("webosvcket change "+state);
 	if (state==WebsocketConnectingStatusEnum.CONNECTED){
-		$("#webSocketState").removeClass('btn-secondary');
-		$("#webSocketState").addClass('btn-success');
-	}else if (state==WebsocketConnectingStatusEnum.DISCONNECTED || state==WebsocketConnectingStatusEnum.ERROR ){
-		$("#webSocketState").removeClass('btn-success');
-		$("#webSocketState").addClass('btn-secondary');
+		$("#websocketButton").html("Websocket - connected");
+	}else if (state==WebsocketConnectingStatusEnum.DISCONNECTED){
+		$("#websocketButton").html("Websocket - disconnected");
+	}else if (state==WebsocketConnectingStatusEnum.ERROR){
+		$("#websocketButton").html("Websocket - error");
 	}
 
 }
 
+
+
+
 function webRtcConnectionChange(state){
-	if (state){
-		$("#webRTCState").removeClass('btn-secondary');
-		$("#webRTCState").addClass('btn-success');
-	}else{
-		$("#webRTCState").removeClass('btn-success');
-		$("#webRTCState").addClass('btn-secondary');
+
+	if (state==WebrtcConnectingStatusEnum.CONNECTED) {
+		$("#webRtcButton").html("WebRTC - connected");
+		$("#webRtcButton").prop("disabled",!true)
+	}else if (state==WebrtcConnectingStatusEnum.CONNECTING) {
+		$("#webRtcButton").html("WebRTC - connecting");
+		$("#webRtcButton").prop("disabled",!false);
+	}else if (state==WebrtcConnectingStatusEnum.DISCONNECTING) {
+		$("#webRtcButton").html("WebRTC - disconnecting");
+		$("#webRtcButton").prop("disabled",!false);
+	}else if (state==WebrtcConnectingStatusEnum.CHECKING) {
+		$("#webRtcButton").html("WebRTC - checking");
+		$("#webRtcButton").prop("disabled",!false);
+	}else if (state==WebrtcConnectingStatusEnum.DISCONNECTED) {
+		$("#webRtcButton").html("WebRTC - disconected");
+		$("#webRtcButton").prop("disabled",!true);
+	}else if (state==WebrtcConnectingStatusEnum.FAILED) {
+		$("#webRtcButton").html("WebRTC - failed");
+		$("#webRtcButton").prop("disabled",!true);
 	}
 }
 

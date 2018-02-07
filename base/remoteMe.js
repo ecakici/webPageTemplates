@@ -648,7 +648,7 @@ class RemoteMe {
 
 
 	sendUserMessageByFasterChannel(receiveDeviceId, data) {
-		if (pythonScriptDeviceId>0){
+		if (receiveDeviceId>0){
 			if (this.isWebRTCConnected()) {
 				this.sendWebRtc(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data))
 			} else {
