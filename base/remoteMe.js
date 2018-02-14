@@ -78,6 +78,11 @@ class RemoteMe {
 
 	}
 
+	getRestUrl() {
+		return  window.location.protocol+"//"+window.location.host + "/api/rest/v1/" ;
+
+	}
+
 
 	connectWebSocket() {
 
@@ -126,6 +131,37 @@ class RemoteMe {
 			return false;
 		}
 	}
+
+
+	sendRest(bytearray) {
+		var url = this.getRestUrl()+"message/sendMessage/";
+		var xhttp = new XMLHttpRequest();
+		xhttp.responseType = "arraybuffer";
+		xhttp.open("POST", url,true);
+		xhttp.setRequestHeader("Content-type", "text/plain");
+		xhttp.send(bytearray);
+
+
+	}
+
+	sendRestSync(bytearray,reponseFunction) {
+		var url = this.getRestUrl()+"message/sendSyncMessage/";
+		var xhttp = new XMLHttpRequest();
+		xhttp.responseType = "arraybuffer";
+
+		xhttp.addEventListener("load", function(){
+			var output =new Uint8Array (this.response);
+			reponseFunction(output);
+		});
+
+		xhttp.open("POST", url,true);
+		xhttp.setRequestHeader("Content-type", "text/plain");
+		xhttp.send(bytearray);
+
+
+
+	}
+
 
 
 	sendWebSocketText(text) {
@@ -226,18 +262,6 @@ class RemoteMe {
 	}
 
 
-	sendBinaryMessage() {
-		var http = new XMLHttpRequest();
-		var url = "http://127.0.0.1:8082/api/~1_ySKpyx+'G23/rest/v1/sender/getUserMessage/";
-		http.open("POST", url, true);
-
-		http.setRequestHeader("Content-type", "text/plain");
-		http.setRequestHeader("token", "~1_ySKpyx+'G23");
-
-
-		http.send("12345");
-
-	}
 
 
 //--------------- webrtc
@@ -307,7 +331,6 @@ class RemoteMe {
 			return;
 		}
 
-		this.conf
 
 		this.onWebrtcChange(WebrtcConnectingStatusEnum.DISCONNECTING);
 
@@ -662,7 +685,7 @@ class RemoteMe {
 	}
 
 
-	sendUserMessage(receiveDeviceId, data) {
+	sendUserMessageWebsocket(receiveDeviceId, data) {
 		this.sendWebSocket(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
 	}
 
@@ -670,6 +693,15 @@ class RemoteMe {
 	sendUserMessageWebrtc(receiveDeviceId, data) {
 		this.sendWebRtc(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
 	}
+
+	sendUserMessageRest(receiveDeviceId, data) {
+		this.sendRest(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
+	}
+
+	sendUserSyncMessageRest(receiveDeviceId, data,reponseFunction) {
+		this.sendRestSync(getUserSyncMessage( receiveDeviceId, thisDeviceId,  data),reponseFunction);
+	}
+
 
 
 }

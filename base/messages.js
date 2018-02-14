@@ -1,5 +1,7 @@
 
-MessageType = { USER_MESSAGE :  100, USER_MESSAGE_DELIVER_STATUS :  101,SYNC_MESSAGE: 120,SYNC_RESPONSE_MESSAGE: 121, WEBRTC_MESSAGE: 150, REGISTER_DEVICE :  200, REGISTER_CHILD_DEVICE :  201, ADD_DATA :  300, LOG: 20000};
+
+MessageType = {USER_MESSAGE:100, USER_MESSAGE_DELIVER_STATUS:101,USER_SYNC_MESSAGE:102,	SYNC_MESSAGE:120, SYNC_MESSAGE_RESPONSE:121,	REGISTER_DEVICE:200, REGISTER_CHILD_DEVICE:201,ADD_DATA:300,	LOG:20000,	SYSTEM_MESSAGE:20001};
+
 WSUserMessageSettings = { NO_RENEWAL: 0, RENEWAL_IF_FAILED: 1};
 AddDataMessageSetting = { NO_ROUND :  0, _1S :  1, _2S :  2, _5S :  3, _10S :  4, _15S :  5, _20S :  6, _30S :  7 };
 DeviceType = { NETWORK: 1, SMARTPHONE: 2, WEBPAGE: 3, JSSCRIPT: 4 };
@@ -12,29 +14,57 @@ AndroidMessageIcon = {DEFAULT_ICON:1,PERSON_ICON:2,THIEF_ICON:3,WINDOW_OPEN_ICON
 AndroidMessageSound= {DEFAULT_SOUND:1};
 
 
-//getUserMessage(WSUserMessageSettings.NO_RENEWAL,1234,12,[1,2,3,4,5,6]);
-//getUserMessage(WSUserMessageSettings.NO_RENEWAL,1234,12,"remotemMe some text");
+
 function getUserMessage( userMessageSettings, receiverDeviceId,senderDeviceId, messageId, data) {
 
-    if (typeof data === 'string' || data instanceof String){
-        data=stringToByteArray(data);
-    }
+	if (typeof data === 'string' || data instanceof String){
+		data=stringToByteArray(data);
+	}
 
 
-    size=1+2+2+2+data.length;
-    pos=0;
-    var ret = new Uint8Array(4+size);
+	size=1+2+2+2+data.length;
+	pos=0;
+	var ret = new Uint8Array(4+size);
 
 
-    pos=putShort(ret, pos , MessageType.USER_MESSAGE);
-    pos=putShort(ret,pos,size);
-    pos=putByte(ret,pos,userMessageSettings);
-    pos=putShort(ret,pos,receiverDeviceId);
-    pos=putShort(ret,pos,senderDeviceId);
-    pos=putShort(ret,pos,messageId);
-    pos=putArray(ret,pos,data);
+	pos=putShort(ret, pos , MessageType.USER_MESSAGE);
+	pos=putShort(ret,pos,size);
+	pos=putByte(ret,pos,userMessageSettings);
+	pos=putShort(ret,pos,receiverDeviceId);
+	pos=putShort(ret,pos,senderDeviceId);
+	pos=putShort(ret,pos,messageId);
+	pos=putArray(ret,pos,data);
 
-    return ret;
+	return ret;
+
+}
+
+
+
+
+
+//getUserMessage(1234,12,[1,2,3,4,5,6]);
+//getUserMessage(1234,12,"remotemMe some text");
+function getUserSyncMessage(  receiverDeviceId,senderDeviceId,  data) {
+
+	if (typeof data === 'string' || data instanceof String){
+		data=stringToByteArray(data);
+	}
+
+
+	size=2+2+8+data.length;
+	pos=0;
+	var ret = new Uint8Array(4+size);
+
+
+	pos=putShort(ret, pos , MessageType.USER_SYNC_MESSAGE);
+	pos=putShort(ret,pos,size);
+	pos=putShort(ret,pos,receiverDeviceId);
+	pos=putShort(ret,pos,senderDeviceId);
+	pos=putLong(ret,pos,Math.floor(Math.random() * 1000000000));
+	pos=putArray(ret,pos,data);
+
+	return ret;
 
 }
 

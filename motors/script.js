@@ -143,7 +143,7 @@ function setMotorNow(motorId) {
 	if  (isWebRtc()){
 		sendUserMessageWebrtc(444,ret);
 	}else{
-		sendUserMessage(444,ret);
+		sendUserMessageWebsocket(444,ret);
 
 	}
 }

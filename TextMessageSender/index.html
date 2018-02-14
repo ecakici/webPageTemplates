@@ -1,0 +1,62 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/remoteMe.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/messages.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/adapter.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/control.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/gauge.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/operationTimer.js"></script>
+
+    <script>
+
+		var thisDeviceId =####deviceId#;
+		var raspberryPiDeviceId =####raspberryPiDeviceId#;
+		var pythonScriptDeviceId = -1;
+
+    </script>
+    <script src="script.js"></script>
+
+
+    <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+
+<body>
+
+<div style="  display: flex; flex-flow: column;  height: 100%">
+
+    <div style="flex: 0 1 auto;display: flex; flex-flow: row;margin-bottom:10px">
+        <button style="flex: 1 1 auto;margin-left:10px; " id="websocketButton" onClick="webSocketClicked()">websocket
+        </button>
+        <button style="flex: 1 1 auto;margin-left:10px;" id="webRtcButton" onClick="webRtcClicked()">webrtc</button>
+
+    </div>
+
+    <div style="flex: 0 1 auto;margin-bottom:10px;display: flex; flex-flow: row;">
+
+        <p style="flex: 0 0 auto; ">ReceiveDeviceId:</p>
+        <input style="flex: 0 10 auto;margin-left:10px; " type="number" id="receiveDeviceId"/>
+        <p style="flex: 0 0 auto; margin-left:20px">Your name:</p>
+        <input style="flex: 1 1000 auto;margin-left:10px; " type="text" id="name"/>
+
+        <button style="flex: 0 0 auto;margin-left:10px; " id="sendRestApiSocket" onClick="sendRest()">Send by rest    </button>
+        <button style="flex: 0 0 auto;margin-left:10px; " id="sendWebSocket" onClick="sendWebsocket()">Send Websocket        </button>
+        <button style="flex: 0 0 auto;margin-left:10px; " id="sendWebRtc" onClick="sendWebrtc()">Send Webrtc</button>
+        <button style="flex: 0 0 auto;margin-left:10px; " id="sendSyncApiSocket" onClick="sendSync()">Send Sync</button>
+        <button style="flex: 0 0 auto;margin-left:10px; " onmousedown="appendLog('asdasdasd')">Send Sync</button>
+
+
+    </div>
+
+
+    <textarea id="logs" style="flex: 100 100 auto;"></textarea>
+
+    <button style="flex: 1 1 auto;" id="clearLogs" onClick="clearLogs()">Clear logs</button>
+</div>
+
+<script>
+	setup();
+</script>
+</body>
+</html>
