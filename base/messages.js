@@ -45,7 +45,7 @@ function getUserMessage( userMessageSettings, receiverDeviceId,senderDeviceId, m
 
 //getUserMessage(1234,12,[1,2,3,4,5,6]);
 //getUserMessage(1234,12,"remotemMe some text");
-function getUserSyncMessage(  receiverDeviceId,senderDeviceId,  data) {
+function getUserSyncMessage(   receiverDeviceId,senderDeviceId,  data) {
 
 	if (typeof data === 'string' || data instanceof String){
 		data=stringToByteArray(data);
@@ -65,6 +65,29 @@ function getUserSyncMessage(  receiverDeviceId,senderDeviceId,  data) {
 	pos=putArray(ret,pos,data);
 
 	return ret;
+}
+
+
+function getUserSyncResponseMessage(messageId,   data) {
+
+	if (typeof data === 'string' || data instanceof String){
+		data=stringToByteArray(data);
+	}
+
+
+	size=8+data.length;
+	var pos=0;
+	var ret = new Uint8Array(4+size);
+
+	pos=putShort(ret, pos , MessageType.SYNC_MESSAGE_RESPONSE);
+	pos=putShort(ret,pos,size);
+
+	pos=putLong(ret,pos,messageId);
+	pos=putArray(ret,pos,data);
+
+	return ret;
+
+
 
 }
 
@@ -193,8 +216,42 @@ function putArray(bytearray, pos, array){
     return pos;
 }
 
+function readLong(bytearray,posObject){
+	var ret=0;
+	for(i=posObject.pos;i<posObject.pos+8;i++){
+		ret =(ret<<8)+bytearray[i];
+	}
+	posObject.pos+=8;
+
+	return ret;
+}
+
+function readShort(bytearray,posObject){
+	posObject.pos+=2;
+	return (bytearray[posObject.pos-2]<<8)+bytearray[posObject.pos-1];
+}
+
+function readByte(bytearray,posObject){
+	posObject.pos+=1;
+	return bytearray[posObject.pos-1];
+}
+
+function readRestArray(bytearray,posObject){
+	var data = bytearray.subarray(posObject.pos);
+
+	posObject.pos=bytearray.length;
+
+	return data; //to convert it normal array use Array.from(data);
+
+
+}
+
 function stringToByteArray(text){
     return Array.from(new TextEncoder("utf-8").encode(text));
+}
+
+function byteArrayToString(byteArray){
+	return new TextDecoder("utf-8").decode(byteArray);
 }
 
 function parseHexString(str) {

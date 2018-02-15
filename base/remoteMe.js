@@ -23,6 +23,8 @@ class RemoteMe {
 			automaticlyConnectWebRTC: false,
 			webSocketConnectionChange: undefined,
 			webRtcConnectionChange: undefined,
+			onUserMessage:undefined,
+			onUserSyncMessage:undefined,
 			pcConfig: {"iceServers": [{"urls": "stun:stun.l.google.com:19302"}]},
 			pcOptions: {optional: [{DtlsSrtpKeyAgreement: true}]},
 			mediaConstraints: {'mandatory': {'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true}}
@@ -242,19 +244,58 @@ class RemoteMe {
 		}
 
 		if (!isWebrtcConfiguration) {
+
 			var ret = new Object();
+
+			var pos = new Object();
+			pos.pos=0;
 
 			var bytearray = new Uint8Array(event.data);
 
-			ret.typeId = bytearray[0];
-			ret.renevalWhenFailTypeId = bytearray[1];
-			ret.receiveDeviceId = (bytearray[2] << 8) + bytearray[3];
-			ret.senderDeviceId = (bytearray[4] << 8) + bytearray[5];
-			ret.messageId = (bytearray[6] << 8) + bytearray[7];
-			ret.size = (bytearray[8] << 8) + bytearray[9];
-			var data = bytearray.subarray(10);
-			ret.data = Array.from(data);
-			ret.dataTExt = new TextDecoder("utf-8").decode(data);
+			ret.typeId = readShort(bytearray,pos);
+			if (ret.typeId==MessageType.USER_MESSAGE){
+				ret.size = readShort(bytearray,pos);
+				ret.renevalWhenFailTypeId = readByte(bytearray,pos);
+				ret.receiveDeviceId = readShort(bytearray,pos);
+				ret.senderDeviceId = readShort(bytearray,pos);
+				ret.messageId =  readShort(bytearray,pos);
+
+				ret.data =readRestArray(bytearray,pos) ;
+
+				if (this.remoteMeConfig.onUserMessage!=undefined){
+					this.remoteMeConfig.onUserMessage(ret.senderDeviceId,ret.data);
+				}
+
+
+			}else if (ret.typeId==MessageType.USER_SYNC_MESSAGE){
+				ret.size = readShort(bytearray,pos);
+
+				ret.receiveDeviceId = readShort(bytearray,pos);
+				ret.senderDeviceId = readShort(bytearray,pos);
+				ret.messageId =  readLong(bytearray,pos);
+
+				console.info(ret.messageId);
+
+				ret.data =readRestArray(bytearray,pos) ;
+
+				if (this.remoteMeConfig.onUserSyncMessage!=undefined){
+					var functionRet=this.remoteMeConfig.onUserSyncMessage(ret.senderDeviceId,ret.data);
+
+					var toSend=getUserSyncResponseMessage(ret.messageId,functionRet);
+					if (this.isWebSocketConnected()){
+						this.sendWebSocket(toSend);
+					}else{
+						this.sendRest(toSend);
+					}
+				}else{
+					console.error("Sync message came but no function to handle it");
+				}
+
+
+			}else{
+				console.error("Message id "+ret.typeId+" was not reconized");
+			}
+
 
 
 		}

@@ -1,0 +1,48 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/remoteMe.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/messages.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/adapter.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/control.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/gauge.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/operationTimer.js"></script>
+
+    <script>
+
+		var thisDeviceId =####deviceId#;
+		var raspberryPiDeviceId =####raspberryPiDeviceId#;
+		var pythonScriptDeviceId = -1;
+
+    </script>
+    <script src="script.js"></script>
+
+
+    <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+
+<body>
+
+<div style="  display: flex; flex-flow: column;  height: 100%">
+
+    <div style="flex: 0 1 auto;display: flex; flex-flow: row;margin-bottom:10px">
+        <button style="flex: 1 1 auto;margin-left:10px; " id="websocketButton" onClick="webSocketClicked()">websocket
+        </button>
+        <button style="flex: 1 1 auto;margin-left:10px;" id="webRtcButton" onClick="webRtcClicked()">webrtc</button>
+
+    </div>
+
+
+
+
+    <textarea id="logs" style="flex: 100 100 auto;"></textarea>
+
+    <button style="flex: 1 1 auto;" id="clearLogs" onClick="clearLogs()">Clear logs</button>
+</div>
+
+<script>
+	setup();
+</script>
+</body>
+</html>

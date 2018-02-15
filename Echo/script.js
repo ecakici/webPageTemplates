@@ -18,9 +18,10 @@ function setup(){
 	remoteme = new RemoteMe({
 		automaticlyConnectWS: true,
 		automaticlyConnectWebRTC:false,
-		onUserMessage:onUserMessage,
 		webSocketConnectionChange: webSocketConnectionChange,
 		webRTCConnectionChange: webRtcConnectionChange,
+		onUserMessage:onUserMessage,
+		onUserSyncMessage:onUserSyncMessage,
 		mediaConstraints: {'mandatory': {'OfferToReceiveAudio': false, 'OfferToReceiveVideo': false}}
 	});
 }
@@ -54,43 +55,7 @@ function pad(num, size) {
 	return s.substr(s.length-size);
 }
 
-function getMessageToSend(){
-	return stringToByteArray($("#name").val());
-}
 
-function getReceiveDeviceId(){
-	return $("#receiveDeviceId").val();
-}
-
-
-function sendWebsocket(){
-	appendLog("--- Send by Websocket ---");
-	remoteme.sendUserMessageWebsocket(getReceiveDeviceId(),getMessageToSend());
-}
-function sendWebrtc(){
-	appendLog("--- Send by Webrtc ---");
-	remoteme.sendUserMessageWebrtc(getReceiveDeviceId(),getMessageToSend());
-}
-function sendSync(){
-	appendLog("--- Send Sync ---");
-	remoteme.sendUserSyncMessageRest(getReceiveDeviceId(),getMessageToSend(), function (output) {
-		appendLog("got asynch answer:");
-		appendLogArray(output);
-	});
-}
-
-
-function sendRest(){
-	appendLog("--- Send by Rest ---");
-	remoteme.sendUserMessageRest(getReceiveDeviceId(),getMessageToSend());
-
-}
-
-function onUserMessage(senderDeviceId,data){
-	appendLog("user message from device "+senderDeviceId+" comes ");
-	appendLog("["+data+"] = string [" + byteArrayToString(data)+"]");
-
-}
 
 
 
@@ -102,6 +67,25 @@ function webSocketConnectionChange(state){
 	}else if (state==WebsocketConnectingStatusEnum.ERROR){
 		$("#websocketButton").html("Websocket - error");
 	}
+
+}
+
+function onUserMessage(senderDeviceId,data){
+	appendLog("user message from device "+senderDeviceId+" comes ");
+	appendLog("["+data+"] = string [" + byteArrayToString(data)+"]");
+
+	if (remoteme.isWebSocketConnected()){
+		remoteme.sendUserMessageWebsocket(senderDeviceId,"Hello "+ byteArrayToString(data));
+	}else{
+		remoteme.sendUserMessageRest(senderDeviceId,"Hello "+ byteArrayToString(data));
+	}
+}
+
+function onUserSyncMessage(senderDeviceId,data){
+	appendLog("sync user message from device "+senderDeviceId+" comes ");
+	appendLog("["+data+"] = string [" + byteArrayToString(data)+"]");
+
+	return "Hello sync "+byteArrayToString(data);
 
 }
 
