@@ -220,89 +220,92 @@ class RemoteMe {
 
 
 	onMessageWS(event) {
+        if (typeof event.data === 'string' || event.data instanceof String){
+            this.log(JSON.stringify(event));
 
-		this.log(JSON.stringify(event));
-		var isWebrtcConfiguration = false;
-		{
-			var ex = false;
-			this.log("got websocket config ")
-			try {
+            {
+                var ex = false;
+                this.log("got websocket config ")
+                try {
 
-				var dataJson = JSON.parse(event.data);
+                    var dataJson = JSON.parse(event.data);
 
-			}
-			catch (e) {
-				ex = true;
-			}
+                }
+                catch (e) {
+                    ex = true;
+                }
 
-			if (!ex) {
-				if (dataJson["cmd"] == "send") {
-					this.isWebrtcConfiguration = true;
-					this.doHandlePeerMessage(dataJson["msg"]);
-				}
-			}
+                if (!ex) {
+                    if (dataJson["cmd"] == "send") {
+                        this.doHandlePeerMessage(dataJson["msg"]);
+                    }
+                }
+            }
+		}else{
+			this.processIncommingBinnaryMessage(event.data);
 		}
 
-		if (!isWebrtcConfiguration) {
-
-			var ret = new Object();
-
-			var pos = new Object();
-			pos.pos=0;
-
-			var bytearray = new Uint8Array(event.data);
-
-			ret.typeId = readShort(bytearray,pos);
-			if (ret.typeId==MessageType.USER_MESSAGE){
-				ret.size = readShort(bytearray,pos);
-				ret.renevalWhenFailTypeId = readByte(bytearray,pos);
-				ret.receiveDeviceId = readShort(bytearray,pos);
-				ret.senderDeviceId = readShort(bytearray,pos);
-				ret.messageId =  readShort(bytearray,pos);
-
-				ret.data =readRestArray(bytearray,pos) ;
-
-				if (this.remoteMeConfig.onUserMessage!=undefined){
-					this.remoteMeConfig.onUserMessage(ret.senderDeviceId,ret.data);
-				}
 
 
-			}else if (ret.typeId==MessageType.USER_SYNC_MESSAGE){
-				ret.size = readShort(bytearray,pos);
-
-				ret.receiveDeviceId = readShort(bytearray,pos);
-				ret.senderDeviceId = readShort(bytearray,pos);
-				ret.messageId =  readLong(bytearray,pos);
-
-				console.info(ret.messageId);
-
-				ret.data =readRestArray(bytearray,pos) ;
-
-				if (this.remoteMeConfig.onUserSyncMessage!=undefined){
-					var functionRet=this.remoteMeConfig.onUserSyncMessage(ret.senderDeviceId,ret.data);
-
-					var toSend=getUserSyncResponseMessage(ret.messageId,functionRet);
-					if (this.isWebSocketConnected()){
-						this.sendWebSocket(toSend);
-					}else{
-						this.sendRest(toSend);
-					}
-				}else{
-					console.error("Sync message came but no function to handle it");
-				}
-
-
-			}else{
-				console.error("Message id "+ret.typeId+" was not reconized");
-			}
-
-
-
-		}
 
 	}
 
 
+
+	processIncommingBinnaryMessage(data){
+        var ret = new Object();
+
+        var pos = new Object();
+        pos.pos=0;
+
+        var bytearray = new Uint8Array(data);
+
+        ret.typeId = readShort(bytearray,pos);
+        if (ret.typeId==MessageType.USER_MESSAGE){
+            ret.size = readShort(bytearray,pos);
+            ret.renevalWhenFailTypeId = readByte(bytearray,pos);
+            ret.receiveDeviceId = readShort(bytearray,pos);
+            ret.senderDeviceId = readShort(bytearray,pos);
+            ret.messageId =  readShort(bytearray,pos);
+
+            ret.data =readRestArray(bytearray,pos) ;
+
+            if (this.remoteMeConfig.onUserMessage!=undefined){
+                this.remoteMeConfig.onUserMessage(ret.senderDeviceId,ret.data);
+            }
+
+
+        }else if (ret.typeId==MessageType.USER_SYNC_MESSAGE){
+            ret.size = readShort(bytearray,pos);
+
+            ret.receiveDeviceId = readShort(bytearray,pos);
+            ret.senderDeviceId = readShort(bytearray,pos);
+            ret.messageId =  readLong(bytearray,pos);
+
+            console.info(ret.messageId);
+
+            ret.data =readRestArray(bytearray,pos) ;
+
+            if (this.remoteMeConfig.onUserSyncMessage!=undefined){
+                var functionRet=this.remoteMeConfig.onUserSyncMessage(ret.senderDeviceId,ret.data);
+
+                var toSend=getUserSyncResponseMessage(ret.messageId,functionRet);
+                if (this.isWebSocketConnected()){
+                    this.sendWebSocket(toSend);
+                }else{
+                    this.sendRest(toSend);
+                }
+            }else{
+                console.error("Sync message came but no function to handle it");
+            }
+
+
+        }else{
+            console.error("Message id "+ret.typeId+" was not reconized");
+        }
+
+
+    }
 
 
 //--------------- webrtc
@@ -443,8 +446,9 @@ class RemoteMe {
 
 	onDataChannel(event) {
 		RemoteMe.thiz.openedChanel = event.channel;
+        RemoteMe.thiz.openedChanel.binaryType="arraybuffer";
 
-		RemoteMe.thiz.logTrace("on data channel " + event.channel.label);
+		RemoteMe.thiz.logTrace("on data channel  " + event.channel.label);
 
 
 		/*event.channel.onclose = function () {
@@ -454,8 +458,9 @@ class RemoteMe {
 			}
 		};*/
 		event.channel.onmessage = function (e) {
-			RemoteMe.thiz.log("on Message " + e);
-		}
+			this.log("on Message by webrtc" + e);
+            this.processIncommingBinnaryMessage(e.data);
+		}.bind(RemoteMe.thiz);
 	}
 
 
