@@ -5,56 +5,53 @@
 class OperationTimer {
 
 
-	constructor(defaultDelay) {
+	constructor(defaultDelay=200) {
 		this.toExecute = [];
 		this.executeDelay = [];
 		this.timers = [];
 
-		if (defaultDelay == undefined) {
-			this.defaultDelay = 10;
-		} else {
-			this.defaultDelay = defaultDelay;
-		}
+		this.defaultDelay = defaultDelay;
 	}
 
-	setDelayForOperationId(operationId, delay) {
-		this.executeDelay[operationId] = delay;
+	setDelayForFunction(fun, delay) {
+		this.executeDelay[fun.name] = delay;
 	}
 
-	executeWithThis(operationId, fun, thiz, ...parameters) {
+
+	setDefaultDelay(delay) {
+		this.defaultDelay = delay;
+	}
+
+
+
+	execute(fun, ...parameters) {
+		var operationId=fun.name;
 		if (this.timers[operationId] == undefined) {//for first time we call it immidetly
-			fun.apply(thiz, parameters);
-			this.setTimeout(this, operationId);// we set timepout but nothing to execute
+			fun.apply(undefined, parameters);
+			this._setTimeout(this, operationId);// we set timepout but nothing to execute
 		} else {
-			this.toExecute[operationId] = {'fun': fun, 'thiz': thiz, 'parameters': parameters};
-			console.info("added to execute later");
+			this.toExecute[operationId] = {'fun': fun,  'parameters': parameters};
 		}
 
-
 	}
 
-	execute(operationId, fun, ...parameters) {
-		this.executeWithThis(operationId, fun, undefined, parameters);
-
-	}
-
-	setTimeout(thiz, operationId) {
+	_setTimeout(thiz, operationId) {
 		var delayOfCurrent = thiz.executeDelay[operationId];
 		if (delayOfCurrent == undefined) {
 			delayOfCurrent = thiz.defaultDelay;
 		}
-		thiz.timers[operationId] = setTimeout(thiz.executeNow, delayOfCurrent, thiz, operationId);
+		thiz.timers[operationId] = setTimeout(thiz._executeNow, delayOfCurrent,thiz, operationId);
 	}
 
-	executeNow(thiz, operationId) {
+	_executeNow(thiz, operationId) {
 
 		var toExecute = thiz.toExecute[operationId];
 
 		thiz.toExecute[operationId] = undefined;
 
 		if (toExecute != undefined) {
-			toExecute.fun.apply(toExecute.thiz, toExecute.parameters);
-			thiz.setTimeout(thiz, operationId);
+			toExecute.fun.apply(undefined,toExecute.parameters);
+			thiz._setTimeout(thiz,operationId);
 		} else {
 			thiz.timers[operationId] = undefined;//so we call it again after some time of next execituin
 		}
