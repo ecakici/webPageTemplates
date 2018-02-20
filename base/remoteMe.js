@@ -70,7 +70,7 @@ class RemoteMe {
 
 	getWSUrl() {
 		var ret;
-		if (window.location.protocol == 'https') {
+		if (window.location.protocol == 'https:') {
 			ret = "wss://";
 		} else {
 			ret = "ws://";
