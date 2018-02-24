@@ -85,7 +85,7 @@ function setServo(servoId){
 	}else{
 		ot.defaultDelay=400;
 	}
-	ot.execute("setServo",setServoNow,servoId)
+	ot.execute(setServoNow,servoId)
 
 
 }
