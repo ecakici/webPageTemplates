@@ -149,7 +149,11 @@ class Control {
 
 		if (thiz.currentValue != newValue) {
 			thiz.currentValue = newValue;
-			thiz.callOnChange(newValue);
+			if (newValue<0){
+				thiz.callOnChange(-newValue/thiz.minGlobal);
+			}else{
+				thiz.callOnChange(newValue/thiz.maxGlobal);
+			}
 		}
 
 		if (thiz.isRunning) {

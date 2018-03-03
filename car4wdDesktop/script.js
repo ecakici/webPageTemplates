@@ -12,119 +12,7 @@ var leftSideSpeedMeter ;
 var rightSideSpeedMeter ;
 var cameraPosition;
 
-class CarController{
 
-	constructor(){
-		this.turn=0;
-		this.speed=0;
-		this.cameraX=0.5;
-		this.cameraY=0.5;
-
-		this.xAxeCenter= 582;
-		this.xAxeRange=200;
-
-		this.yAxeCenter=430;
-		this.yAxeRange=200;
-
-
-		this.cameraXDirection=-1;
-		this.cameraYDirection=1;
-
-	}
-
-
-	setSpeed(speed){
-		this.speed=speed;
-		speedmeter.setValue(speed);
-		setDrive();
-	}
-
-	setTurn(turn){
-		this.turn=turn;
-		turnMeter.setValue(turn);
-		setDrive();
-	}
-
-	compute(){
-		this.leftSpeed= this.speed;
-		this.rightSpeed=this.speed;
-
-
-
-		var mn=this.speed<0?-1:1;//so it turns while drivign backwards as a real car
-
-		this.leftSpeed+=this.turn/mn;
-		this.rightSpeed-=this.turn/mn;
-
-		this.leftSpeed=Math.min(255,Math.max(-255,this.leftSpeed));
-		this.rightSpeed=Math.min(255,Math.max(-255,this.rightSpeed));
-
-		leftSideSpeedMeter.setValue(this.leftSpeed);
-		rightSideSpeedMeter.setValue(this.rightSpeed);
-
-
-
-	}
-
-	getLeftSideMotorId(){
-		return 1;
-	}
-
-	getRightSideMotorId(){
-		return 0;
-	}
-
-	getCameraXId(){
-		return 1;
-	}
-	getCameraYId(){
-		return 0;
-	}
-
-	getLeftSideSpeed(){
-		return Math.abs(this.leftSpeed);
-	}
-
-	getRightSideSpeed(){
-		return Math.abs(this.rightSpeed);
-	}
-
-	getRightSideMode(){
-		if (this.rightSpeed==0){
-			return 1;
-		}else if (this.rightSpeed<0){
-			return 3;
-		}else{
-			return 2;
-		}
-	}
-
-	getLeftSideMode(){
-		if (this.leftSpeed==0){
-			return 1;
-		}else if (this.leftSpeed<0){
-			return 2;//becsaue basles are mismatch
-		}else{
-			return 3;
-		}
-	}
-
-	setCameraPosition(x,y){
-		this.cameraX=x;
-		this.cameraY=y;
-
-		cameraPosition.setPosition(x,y);
-		setCamera();
-	}
-
-	getCameraX(){
-		return this.xAxeCenter+(this.cameraX-0.5)*2*this.xAxeRange*this.cameraXDirection;
-	}
-
-	getCameraY(){
-		return this.yAxeCenter+(this.cameraY-0.5)*2*this.yAxeRange*this.cameraYDirection;
-	}
-}
 
 
 function setupKeyboard(){
@@ -180,18 +68,27 @@ function setupComponents(){
 
 	speedControll=new Control(-255,255,3,function(value){
 		carController.setSpeed(value);
+		speedmeter.setValue(value*255);
+		send();
 	});
 
 
 	turn=new Control(-255,255,3,function(value){
 		carController.setTurn(value);
+		turnMeter.setValue(value*255);
+		send();
 	});
 	turn.idleWait=0;
 	turn.freeAccelerate=40;
 	turn.accelerate=40;
 
 
-	carController = new CarController();
+	carController = new CarController4WD();
+	carController.xAxeCenter= 560;
+	carController.xAxeRange=200;
+	carController.yAxeCenter=430;
+	carController.yAxeRange=200;
+
 	carController.setSpeed(0);
 	carController.setTurn(0);
 	carController.setCameraPosition(0.5,0.5);
@@ -207,14 +104,17 @@ function setupComponents(){
 		var pox_x = event.pageX/video.width();
 		var pos_y = event.pageY/video.height();
 
-		carController.setCameraPosition(pox_x,pos_y);
+		carController.setCameraPosition(pox_x*2-1,pos_y*2-1);
+		cameraPosition.setPosition(pox_x,pos_y);
+		send();
 	});
 
 
 
 	$('#cameraCenter').on('click', function() {
-		carController.setCameraPosition(0.5,0.5);
-
+		carController.setCameraPosition(0,0);
+		cameraPosition.setPosition(0.5,0.5);
+		send();
 
 	});
 	//-----------
@@ -261,69 +161,42 @@ counter=0;
 
 
 
-function setDrive(){
+
+function send(){
 	if  (remoteme.isWebRTCConnected()){
-		ot.defaultDelay=150;
+		ot.defaultDelay=200;
 	}else{
 		ot.defaultDelay=400;
 	}
-	ot.execute("setDrive",setDriveNow)
+	ot.execute(sendNow)
 }
 
-function setCamera(){
-	if  (remoteme.isWebRTCConnected()){
-		ot.defaultDelay=150;
-	}else{
-		ot.defaultDelay=400;
-	}
-	ot.execute("setCamera",setCameraNow)
-}
-
-function setCameraNow() {
-
-	console.log("camera x:: "+carController.getCameraX()+" y: "+carController.getCameraY());
 
 
-	var ret = new Uint8Array(8);
+function sendNow(){
+	carController.compute();
+
+
+	leftSideSpeedMeter.setValue(carController.getLeftSideSpeed()*255 );
+	rightSideSpeedMeter.setValue(carController.getRightSideSpeed()*255 );
+
+	var ret = new Uint8Array(9);
 	var pos=0;
 
-	pos=putByte(ret, pos ,2);//mode 2= setCamera
-	pos=putByte(ret, pos ,carController.getCameraXId() );
+	pos=putByte(ret, pos ,1);//mode 1 send camera and motors
 	pos=putShort(ret, pos ,carController.getCameraX() );
-
-
-
-	pos=putByte(ret, pos ,2);//mode 2= setCamera
-	pos=putByte(ret, pos ,carController.getCameraYId() );
 	pos=putShort(ret, pos ,carController.getCameraY() );
 
+	pos=putByte(ret, pos ,carController.getMotorMode(carController.getRightSideSpeed()) );
+	pos=putByte(ret, pos ,Math.abs(carController.getRightSideSpeed()*255 ));
 
-	remoteme.sendUserMessageByFasterChannel(carScriptDeviceId,ret);
-}
+	pos=putByte(ret, pos ,carController.getMotorMode(-carController.getLeftSideSpeed()) );
+	pos=putByte(ret, pos ,Math.abs(carController.getLeftSideSpeed()*255) );
 
-
-function setDriveNow() {
-
-	carController.compute();
-	console.log("setting leftSide: "+carController.getLeftSideSpeed()+" right Side: "+carController.getRightSideSpeed());
-
-
-	var ret = new Uint8Array(8);
-	var pos=0;
-
-	pos=putByte(ret, pos ,1 );//mode 1= setMotor
-	pos=putByte(ret, pos ,carController.getLeftSideMotorId() );//motorId 1 = left side
-	pos=putByte(ret, pos ,carController.getLeftSideMode() );
-	pos=putByte(ret, pos ,carController.getLeftSideSpeed() );
-
-
-	pos=putByte(ret, pos ,1 );//mode 1= setMotor
-	pos=putByte(ret, pos ,carController.getRightSideMotorId() );//motorId 1 = left side
-	pos=putByte(ret, pos ,carController.getRightSideMode() );
-	pos=putByte(ret, pos ,carController.getRightSideSpeed() );
 
 
 	remoteme.sendUserMessageByFasterChannel(carScriptDeviceId,ret);
+
 }
 
 

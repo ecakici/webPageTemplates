@@ -1,1 +1,0 @@
-Send TExt messages and monitor text reponses, through multiple protocols
