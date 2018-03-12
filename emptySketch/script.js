@@ -1,3 +1,4 @@
+var remoteme;
 
 function setup(){
 	remoteme = new RemoteMe({
