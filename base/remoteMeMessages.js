@@ -174,7 +174,7 @@ class RemoteMeData {
 	}
 
 	size(){
-		return rd2.dataView.byteLength;
+		return this.dataView.byteLength;
 	}
 
 	rewind(){
@@ -203,7 +203,7 @@ function getArray(data){
 		data=stringToByteArray(data);
 	}
 	if (data instanceof RemoteMeData){
-		data= new Array(... new Uint8Array (rd.dataView.buffer));
+		data= new Array(... new Uint8Array (data.dataView.buffer));
 	}
 	if (data instanceof ArrayBuffer){
 		data= new Array(... new Uint8Array (data));
@@ -381,10 +381,3 @@ function parseHexString(str) {
 }
 
 
-var rd=new RemoteMeData(10);
-rd.putInt8(10);
-rd.putInt8(255);
-
-var rd2=new RemoteMeData(15);
-rd2.putInt8(11);
-rd2.putInt8(12);

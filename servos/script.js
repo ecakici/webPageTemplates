@@ -95,12 +95,11 @@ function setServoNow(servoId) {
 	console.log("setting servo: "+servoId+" "+value);
 
 
-	var ret = new Uint8Array(3);
-	var pos=0;
+	var ret = new RemoteMeData(3);
 
-	pos=putByte(ret, pos ,servoId );
-	pos=putShort(ret, pos ,value );
 
+	ret.putByte(servoId );
+	ret.putShort(value );
 
 
 	remoteme.sendUserMessageByFasterChannel(servoPythonDeviceId,ret);

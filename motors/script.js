@@ -132,12 +132,12 @@ function setMotorNow(motorId) {
 	console.log("setting motor: "+motorId+" mode: "+mode +" value: "+value);
 
 
-	var ret = new Uint8Array(4);
-	var pos=0;
+	var ret = new RemoteMeData(4);
 
-	pos=putByte(ret, pos ,motorId );
-	pos=putByte(ret, pos ,mode );
-	pos=putShort(ret, pos ,value );
+
+	ret.putByte(motorId );
+	ret.putByte(mode );
+	ret.putShort(value );
 
 
 	if  (isWebRtc()){

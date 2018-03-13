@@ -124,9 +124,9 @@ class RemoteMe {
 	}
 
 
-	sendWebSocket(bytearray) {
+	sendWebSocket(bytearrayBuffer) {
 		if (this.isWebSocketConnected()) {
-			this.webSocket.send(bytearray.buffer);
+			this.webSocket.send(bytearrayBuffer);
 			return true;
 		} else {
 			this.log("websocket is not opened");
@@ -135,18 +135,18 @@ class RemoteMe {
 	}
 
 
-	sendRest(bytearray) {
+	sendRest(bytearrayBuffer) {
 		var url = this.getRestUrl()+"message/sendMessage/";
 		var xhttp = new XMLHttpRequest();
 		xhttp.responseType = "arraybuffer";
 		xhttp.open("POST", url,true);
 		xhttp.setRequestHeader("Content-type", "text/plain");
-		xhttp.send(bytearray);
+		xhttp.send(bytearrayBuffer);
 
 
 	}
 
-	sendRestSync(bytearray,reponseFunction) {
+	sendRestSync(bytearrayBuffer,reponseFunction) {
 		var url = this.getRestUrl()+"message/sendSyncMessage/";
 		var xhttp = new XMLHttpRequest();
 		xhttp.responseType = "arraybuffer";
@@ -163,7 +163,7 @@ class RemoteMe {
 
 		xhttp.open("POST", url,true);
 		xhttp.setRequestHeader("Content-type", "text/plain");
-		xhttp.send(bytearray);
+		xhttp.send(bytearrayBuffer);
 
 
 
@@ -181,9 +181,9 @@ class RemoteMe {
 		}
 	}
 
-	sendWebRtc(bytearray) {
+	sendWebRtc(bytearrayBuffer) {
 		if (this.isWebRTCConnected()) {
-			this.openedChanel.send(bytearray.buffer)
+			this.openedChanel.send(bytearrayBuffer)
 		} else {
 			this.log("webrtc channels is not opened")
 		}
@@ -722,9 +722,9 @@ class RemoteMe {
 	sendUserMessageByFasterChannel(receiveDeviceId, data) {
 		if (receiveDeviceId>0){
 			if (this.isWebRTCConnected()) {
-				this.sendWebRtc(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data))
+				this.sendUserMessageWebrtc(receiveDeviceId, data)
 			} else {
-				this.sendWebSocket(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
+				this.sendUserMessageWebsocket(receiveDeviceId, data);
 			}
 		}else{
 			console.error("Cannot send message to deviceId with this id, did You configure your script correct ?");

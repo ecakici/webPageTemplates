@@ -60,22 +60,23 @@ function sendNow(){
 
 
 
-	var ret = new Uint8Array(9);
-	var pos=0;
+	var ret = new RemoteMeData(9);
 
-	pos=putByte(ret, pos ,1);//mode 1 send camera and motors
-	pos=putShort(ret, pos ,carController.getCameraX() );
-	pos=putShort(ret, pos ,carController.getCameraY() );
 
-	pos=putByte(ret, pos ,carController.getMotorMode(carController.getRightSideSpeed()) );
-	pos=putByte(ret, pos ,Math.abs(carController.getRightSideSpeed()*255 ));
+	ret.putByte(1);//mode 1 send camera and motors
+	ret.putShort(carController.getCameraX() );
+	ret.putShort(carController.getCameraY() );
 
-	pos=putByte(ret, pos ,carController.getMotorMode(-carController.getLeftSideSpeed()) );
-	pos=putByte(ret, pos ,Math.abs(carController.getLeftSideSpeed()*255) );
+	ret.putByte(carController.getMotorMode(carController.getRightSideSpeed()) );
+	ret.putByte(Math.abs(carController.getRightSideSpeed()*255 ));
+
+	ret.putByte(carController.getMotorMode(-carController.getLeftSideSpeed()) );
+	ret.putByte(Math.abs(carController.getLeftSideSpeed()*255) );
 
 
 
 	remoteme.sendUserMessageByFasterChannel(carScriptDeviceId,ret);
+
 
 }
 
