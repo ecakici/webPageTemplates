@@ -49,7 +49,7 @@ var remoteme;
 function setupComponents(){
 	remoteme = new RemoteMe({
 		automaticlyConnectWS: true,
-		automaticlyConnectWebRTC:false,
+		automaticlyConnectWebRTC:true,
 		webSocketConnectionChange: webSocketConnectionChange,
 		webRTCConnectionChange: webRtcConnectionChange,
 	});
