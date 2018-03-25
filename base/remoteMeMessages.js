@@ -33,7 +33,6 @@ class RemoteMeData {
 		var ret= this.dataView.getInt16(this.pos);
 		this.pos+=2;
 		return ret;
-
 	}
 
 
