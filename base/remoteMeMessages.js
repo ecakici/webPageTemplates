@@ -7,21 +7,21 @@ class RemoteMeData {
 	}
 
 	popFloat32() {
-		var ret= this.dataView.getFloat32();
+		var ret= this.dataView.getFloat32(this.pos);
 		this.pos += 4;
 		return ret;
 	}
 
 
 	popFloat64() {
-		var ret= this.dataView.getFloat64(pos);
+		var ret= this.dataView.getFloat64(this.pos);
 		this.pos+=8
 		return ret;
 
 	}
 
 	popInt8() {
-		var ret= this.dataView.getInt8(pos);
+		var ret= this.dataView.getInt8(this.pos);
 		this.pos+=1;
 		return ret;
 	}
@@ -30,24 +30,22 @@ class RemoteMeData {
 	}
 
 	popInt16() {
-		var ret= this.dataView.getInt16(pos);
+		var ret= this.dataView.getInt16(this.pos);
 		this.pos+=2;
 		return ret;
 
 	}
 
-	popShort(){
-		return this.popInt16();
-	}
+
 
 	popInt32() {
-		var ret= this.dataView.getInt32(pos);
+		var ret= this.dataView.getInt32(this.pos);
 		this.pos+=4;
 		return ret;
 	}
 
 
-	popLong() {
+	popInt64() {
 		var ret=0;
 		for(i=0;i<8;i++){
 			ret =(ret<<8)+this.popInt8();
@@ -56,24 +54,21 @@ class RemoteMeData {
 		return ret;
 	}
 
-	popInt(){
-		return this.popInt32();
-	}
 
 	popUint8() {
-		var ret= this.dataView.getUint8(pos);
+		var ret= this.dataView.getUint8(this.pos);
 		this.pos+=1;
 		return ret;
 	}
 
 	popUint16() {
-		var ret= this.dataView.getUint16(pos);
+		var ret= this.dataView.getUint16(this.pos);
 		this.pos+=2;
 		return ret;
 	}
 
 	popUint32() {
-		var ret= this.dataView.getUint32(pos);
+		var ret= this.dataView.getUint32(this.pos);
 		this.pos+=4;
 		return ret;
 	}
@@ -158,7 +153,7 @@ class RemoteMeData {
 	}
 
 	putString(data){
-		putArray(getArray(data));
+		this.putArray(getArray(data));
 		this.putInt8(0);
 	}
 	getBufferArray(){

@@ -263,13 +263,13 @@ class RemoteMe {
 
         var data = new RemoteMeData(data);
 
-        ret.typeId = data.popShort();
+        ret.typeId = data.popInt16();
         if (ret.typeId==MessageType.USER_MESSAGE){
-            ret.size = data.popShort();
+            ret.size = data.popInt16();
             ret.renevalWhenFailTypeId = data.popByte();
-            ret.receiveDeviceId = data.popShort();
-            ret.senderDeviceId = data.popShort();
-            ret.messageId =  data.popShort();
+            ret.receiveDeviceId = data.popInt16();
+            ret.senderDeviceId = data.popInt16();
+            ret.messageId =  data.popInt16();
 
             ret.data =data.popRestArray() ;
 
@@ -279,11 +279,11 @@ class RemoteMe {
 
 
         }else if (ret.typeId==MessageType.USER_SYNC_MESSAGE){
-            ret.size = data.popShort();
+            ret.size = data.popInt16();
 
-            ret.receiveDeviceId = data.popShort();
-            ret.senderDeviceId = data.popShort();
-            ret.messageId =  data.popLong();
+            ret.receiveDeviceId = data.popInt16();
+            ret.senderDeviceId = data.popInt16();
+            ret.messageId =  data.popInt64();
 
             console.info(ret.messageId);
 
