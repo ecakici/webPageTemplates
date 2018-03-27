@@ -18,6 +18,7 @@ class RemoteMe {
 
 	constructor(config = undefined) {
 		RemoteMe.thiz = this;
+		RemoteMe.thiz.messageUserSyncIdToFunction=[];
 		var remoteMeDefaultConfig = {
 			automaticlyConnectWS: false,
 			automaticlyConnectWebRTC: false,
@@ -165,6 +166,12 @@ class RemoteMe {
 		xhttp.setRequestHeader("Content-type", "text/plain");
 		xhttp.send(bytearrayBuffer);
 
+	}
+
+	sendUserSyncMessageWebSocket(receiveDeviceId,data,responseFunction){
+		var messageId=Math.floor(Math.random() * 1000000000);
+		RemoteMe.thiz.messageUserSyncIdToFunction[messageId]=responseFunction;
+		this.sendWebSocket(getUserSyncMessage( receiveDeviceId, thisDeviceId,data,messageId));
 
 
 	}
@@ -271,7 +278,7 @@ class RemoteMe {
             ret.senderDeviceId = data.popInt16();
             ret.messageId =  data.popInt16();
 
-            ret.data =data.popRestArray() ;
+            ret.data =data.popRestBuffer() ;
 
             if (this.remoteMeConfig.onUserMessage!=undefined){
                 this.remoteMeConfig.onUserMessage(ret.senderDeviceId,ret.data);
@@ -287,7 +294,7 @@ class RemoteMe {
 
             console.info(ret.messageId);
 
-            ret.data =data.popRestArray() ;
+            ret.data =data.popRestBuffer() ;
 
             if (this.remoteMeConfig.onUserSyncMessage!=undefined){
                 var functionRet=this.remoteMeConfig.onUserSyncMessage(ret.senderDeviceId,ret.data);
@@ -303,7 +310,24 @@ class RemoteMe {
             }
 
 
-        }else{
+        }else if (ret.typeId==MessageType.SYNC_MESSAGE_RESPONSE){
+			ret.size = data.popInt16();
+
+			ret.messageId =  data.popInt64();
+
+			ret.data =data.popRestBuffer() ;
+
+			var functionToCall=RemoteMe.thiz.messageUserSyncIdToFunction[ret.messageId];
+			if (functionToCall!=undefined){
+				functionToCall(ret.data);
+				RemoteMe.thiz.messageUserSyncIdToFunction[ret.messageId]=undefined
+			}else{
+				console.error(`got reponse message but message id ${ret.messageId} was not recongized`);
+			}
+
+
+
+		}else{
             console.error("Message id "+ret.typeId+" was not reconized");
         }
 

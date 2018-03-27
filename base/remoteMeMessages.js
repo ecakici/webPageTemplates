@@ -46,11 +46,15 @@ class RemoteMeData {
 
 	popInt64() {
 		var ret=0;
-		for(i=0;i<8;i++){
-			ret =(ret<<8)+this.popInt8();
+		var array =  this.popArray(8);
+
+		var ret=0;
+		for(var i=0;i<8;i++){
+			ret =(ret<<8)+array[i];
 		}
 
 		return ret;
+
 	}
 
 
@@ -73,7 +77,12 @@ class RemoteMeData {
 	}
 
 
-	popRestArray(){
+	popArray(size){
+		var data =new Uint8Array(this.dataView.buffer,this.pos,size);
+		this.pos+=size;
+		return getArray(getDataView(data).buffer);
+	}
+	popRestBuffer(){
 		var data =new Uint8Array(this.dataView.buffer,this.pos);
 		this.pos=this.size();
 		return getDataView(data).buffer;
@@ -139,11 +148,13 @@ class RemoteMeData {
 	}
 
 	putLong(number){
+		var array=[];
 		for ( var index = 0; index < 8; index ++ ) {
 			var byte = number & 0xff;
-			this.putInt8(byte);
+			array [ 8-index-1 ] = byte;
 			number = (number - byte) / 256 ;
 		}
+		this.putArray(array);
 	}
 
 	putArray(data) {
@@ -252,7 +263,7 @@ function getUserMessage( userMessageSettings, receiverDeviceId,senderDeviceId, m
 
 //getUserMessage(1234,12,[1,2,3,4,5,6]);
 //getUserMessage(1234,12,"remotemMe some text");
-function getUserSyncMessage(   receiverDeviceId,senderDeviceId,  data) {
+function getUserSyncMessage(   receiverDeviceId,senderDeviceId,  data,messageId) {
 
 	data=getArray(data);
 
@@ -265,7 +276,7 @@ function getUserSyncMessage(   receiverDeviceId,senderDeviceId,  data) {
 	ret.putShort(size);
 	ret.putShort(receiverDeviceId);
 	ret.putShort(senderDeviceId);
-	ret.putLong(Math.floor(Math.random() * 1000000000));
+	ret.putLong(messageId);
 	ret.putArray(data);
 
 	return ret.getBufferArray();
