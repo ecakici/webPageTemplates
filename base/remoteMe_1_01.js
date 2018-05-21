@@ -233,7 +233,6 @@ class RemoteMe {
 
 	onMessageWS(event) {
         if (typeof event.data === 'string' || event.data instanceof String){
-            this.log(JSON.stringify(event));
 
             {
                 var ex = false;
