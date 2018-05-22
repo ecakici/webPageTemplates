@@ -27,22 +27,26 @@ window.onload=function () {
 		if (expirationTime!=undefined && expirationTime>0 ){
 			expirationTime--;
 			webTokenTimeElement.html(fmtMSS(expirationTime));
+			ping();
 		}
 	},1000);
 	getWebTokenInfo();
 
 
-	console.info(new Date().getMilliseconds());
-	window.onbeforeunload = function (e) {
-		deactivateNow(false);
 
-	var l=Date.now();
-	while (Date.now()<l+250){}
-
-
-	};
 
 };
+
+
+function ping(){
+	var url ="/inner/tokenLanding/ping/";
+	var xhttp = new XMLHttpRequest();
+
+
+	xhttp.open("GET", url,true);
+
+	xhttp.send();
+}
 
 function getWebTokenInfo(){
 	var url ="/inner/tokenLanding/getWebTokenInfo/";
