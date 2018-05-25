@@ -69,14 +69,19 @@ function deactivate(refirect){
 	}
 
 }
-function deactivateNow(refirect){
+
+function redirectToTokenLanding() {
+	window.location='/#/tokenLanding';
+}
+
+function deactivateNow(redirect){
 	var url ="/inner/tokenLanding/deactivate/";
 	var xhttp = new XMLHttpRequest();
 
-	if (refirect){
+	if (redirect){
 		xhttp.addEventListener("load", function(){
 			if (this.status==200){
-				window.location='/#/tokenLanding';
+				redirectToTokenLanding();
 			}
 		});
 	}
@@ -111,6 +116,9 @@ function onMessageWebTokenLandingWebSocket(event){
 		dataJson=JSON.parse(dataJson.dataS);
 		console.info(dataJson);
 		updateTimeAndCredit(dataJson);
+		if (dataJson.expirationTime==null){
+			redirectToTokenLanding();
+		}
 	}
 
 }
