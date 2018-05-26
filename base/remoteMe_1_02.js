@@ -1,15 +1,15 @@
-WebrtcConnectingStatusEnum ={
-	CONNECTED :0,
-	DISCONNECTED:1,
-	FAILED:2,
-	CONNECTING:3,
-	DISCONNECTING:4,
-	CHECKING:5
+WebrtcConnectingStatusEnum = {
+	CONNECTED: 0,
+	DISCONNECTED: 1,
+	FAILED: 2,
+	CONNECTING: 3,
+	DISCONNECTING: 4,
+	CHECKING: 5
 };
-WebsocketConnectingStatusEnum ={
-	CONNECTED :0,
-	DISCONNECTED:1,
-	ERROR:2,
+WebsocketConnectingStatusEnum = {
+	CONNECTED: 0,
+	DISCONNECTED: 1,
+	ERROR: 2,
 };
 
 
@@ -18,19 +18,21 @@ class RemoteMe {
 
 	constructor(config = undefined) {
 		RemoteMe.thiz = this;
+		RemoteMe.thiz.messageUserSyncIdToFunction = [];
 		var remoteMeDefaultConfig = {
 			automaticlyConnectWS: false,
 			automaticlyConnectWebRTC: false,
 			webSocketConnectionChange: undefined,
 			webRtcConnectionChange: undefined,
-			onUserMessage:undefined,
-			onUserSyncMessage:undefined,
+			onUserMessage: undefined,
+			onUserSyncMessage: undefined,
 			pcConfig: {"iceServers": [{"urls": "stun:stun.l.google.com:19302"}]},
 			pcOptions: {optional: [{DtlsSrtpKeyAgreement: true}]},
 			mediaConstraints: {'mandatory': {'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true}}
 		};
 
 
+		this.pingWebSocketTimer;
 		this.remoteMeConfig;
 		this.webSocket;
 		this.openedChanel = undefined;
@@ -49,7 +51,7 @@ class RemoteMe {
 			this.connectWebSocket();
 		}
 
-		window.onbeforeunload = function(event) {
+		window.onbeforeunload = function (event) {
 			this.disconnectWebRTC();
 
 		}.bind(this);
@@ -81,7 +83,7 @@ class RemoteMe {
 	}
 
 	getRestUrl() {
-		return  window.location.protocol+"//"+window.location.host + "/api/rest/v1/" ;
+		return window.location.protocol + "//" + window.location.host + "/api/rest/v1/";
 
 	}
 
@@ -124,9 +126,9 @@ class RemoteMe {
 	}
 
 
-	sendWebSocket(bytearray) {
+	sendWebSocket(bytearrayBuffer) {
 		if (this.isWebSocketConnected()) {
-			this.webSocket.send(bytearray.buffer);
+			this.webSocket.send(bytearrayBuffer);
 			return true;
 		} else {
 			this.log("websocket is not opened");
@@ -135,35 +137,45 @@ class RemoteMe {
 	}
 
 
-	sendRest(bytearray) {
-		var url = this.getRestUrl()+"message/sendMessage/";
+	sendRest(bytearrayBuffer) {
+		var url = this.getRestUrl() + "message/sendMessage/";
 		var xhttp = new XMLHttpRequest();
 		xhttp.responseType = "arraybuffer";
-		xhttp.open("POST", url,true);
+		xhttp.open("POST", url, true);
 		xhttp.setRequestHeader("Content-type", "text/plain");
-		xhttp.send(bytearray);
+		xhttp.send(bytearrayBuffer);
 
 
 	}
 
-	sendRestSync(bytearray,reponseFunction) {
-		var url = this.getRestUrl()+"message/sendSyncMessage/";
+	sendRestSync(bytearrayBuffer, reponseFunction) {
+		var url = this.getRestUrl() + "message/sendSyncMessage/";
 		var xhttp = new XMLHttpRequest();
 		xhttp.responseType = "arraybuffer";
 
-		xhttp.addEventListener("load", function(){
-			var output =new Uint8Array (this.response);
-			reponseFunction(output);
+		xhttp.addEventListener("load", function () {
+			if (this.status == 200) {
+
+				reponseFunction(this.response);
+			} else {
+				console.error("erro while getting sync reponse " + this.statusText);
+			}
+
 		});
 
-		xhttp.open("POST", url,true);
+		xhttp.open("POST", url, true);
 		xhttp.setRequestHeader("Content-type", "text/plain");
-		xhttp.send(bytearray);
-
-
+		xhttp.send(bytearrayBuffer);
 
 	}
 
+	sendUserSyncMessageWebSocket(receiveDeviceId, data, responseFunction) {
+		var messageId = Math.floor(Math.random() * 1000000000);
+		RemoteMe.thiz.messageUserSyncIdToFunction[messageId] = responseFunction;
+		this.sendWebSocket(getUserSyncMessage(receiveDeviceId, thisDeviceId, data, messageId));
+
+
+	}
 
 
 	sendWebSocketText(text) {
@@ -176,9 +188,9 @@ class RemoteMe {
 		}
 	}
 
-	sendWebRtc(bytearray) {
+	sendWebRtc(bytearrayBuffer) {
 		if (this.isWebRTCConnected()) {
-			this.openedChanel.send(bytearray.buffer)
+			this.openedChanel.send(bytearrayBuffer)
 		} else {
 			this.log("webrtc channels is not opened")
 		}
@@ -195,8 +207,8 @@ class RemoteMe {
 
 
 	onCloseWS(event) {
-		this.log("on close");
-
+		window.clearTimeout(this.pingWebSocketTimer);
+		this.pingWebSocketTimer = undefined;
 		if (this.remoteMeConfig.webSocketConnectionChange) {
 			this.remoteMeConfig.webSocketConnectionChange(WebsocketConnectingStatusEnum.DISCONNECTED);
 		}
@@ -206,115 +218,133 @@ class RemoteMe {
 
 
 	onOpenWS(event) {
-		this.log("websocket connected");
 		if (this.remoteMeConfig.automaticlyConnectWebRTC) {
 			setTimeout(function () {
 				this.connectWebRTC();
-			}.bind(this),1000);
+			}.bind(this), 1000);
 		}
 		if (this.remoteMeConfig.webSocketConnectionChange) {
 			this.remoteMeConfig.webSocketConnectionChange(WebsocketConnectingStatusEnum.CONNECTED);
 		}
+		if (this.pingWebSocketTimer != undefined) {
+			window.clearTimeout(this.pingWebSocketTimer);
+		}
+		this.pingWebSocketTimer = setInterval(function () {
+			var ret = new RemoteMeData(4);
+			ret.putShort(0);
+			ret.putShort(0)
+			RemoteMe.thiz.sendWebSocket(ret.getBufferArray());
+		},60000)
 
 	};
 
 
 	onMessageWS(event) {
-        if (typeof event.data === 'string' || event.data instanceof String){
-            this.log(JSON.stringify(event));
+		if (typeof event.data === 'string' || event.data instanceof String) {
 
-            {
-                var ex = false;
-                this.log("got websocket config ")
-                try {
+			{
+				var ex = false;
+				this.log("got websocket config ")
+				try {
 
-                    var dataJson = JSON.parse(event.data);
+					var dataJson = JSON.parse(event.data);
 
-                }
-                catch (e) {
-                    ex = true;
-                }
+				}
+				catch (e) {
+					ex = true;
+				}
 
-                if (!ex) {
-                    if (dataJson["cmd"] == "send") {
-                        this.doHandlePeerMessage(dataJson["msg"]);
-                    }
-                }
-            }
-		}else{
+				if (!ex) {
+					if (dataJson["cmd"] == "send") {
+						this.doHandlePeerMessage(dataJson["msg"]);
+					}
+				}
+			}
+		} else {
 			this.processIncommingBinnaryMessage(event.data);
 		}
-
-
 
 
 	}
 
 
-
-	processIncommingBinnaryMessage(data){
-        var ret = new Object();
-
-        var pos = new Object();
-        pos.pos=0;
-
-        var bytearray = new Uint8Array(data);
-
-        ret.typeId = readShort(bytearray,pos);
-        if (ret.typeId==MessageType.USER_MESSAGE){
-            ret.size = readShort(bytearray,pos);
-            ret.renevalWhenFailTypeId = readByte(bytearray,pos);
-            ret.receiveDeviceId = readShort(bytearray,pos);
-            ret.senderDeviceId = readShort(bytearray,pos);
-            ret.messageId =  readShort(bytearray,pos);
-
-            ret.data =readRestArray(bytearray,pos) ;
-
-            if (this.remoteMeConfig.onUserMessage!=undefined){
-                this.remoteMeConfig.onUserMessage(ret.senderDeviceId,ret.data);
-            }
+	processIncommingBinnaryMessage(data) {
+		var ret = new Object();
 
 
-        }else if (ret.typeId==MessageType.USER_SYNC_MESSAGE){
-            ret.size = readShort(bytearray,pos);
+		var data = new RemoteMeData(data);
 
-            ret.receiveDeviceId = readShort(bytearray,pos);
-            ret.senderDeviceId = readShort(bytearray,pos);
-            ret.messageId =  readLong(bytearray,pos);
+		ret.typeId = data.popInt16();
+		if (ret.typeId == MessageType.USER_MESSAGE) {
+			ret.size = data.popInt16();
+			ret.renevalWhenFailTypeId = data.popByte();
+			ret.receiveDeviceId = data.popInt16();
+			ret.senderDeviceId = data.popInt16();
+			ret.messageId = data.popInt16();
 
-            console.info(ret.messageId);
+			ret.data = data.popRestBuffer();
 
-            ret.data =readRestArray(bytearray,pos) ;
-
-            if (this.remoteMeConfig.onUserSyncMessage!=undefined){
-                var functionRet=this.remoteMeConfig.onUserSyncMessage(ret.senderDeviceId,ret.data);
-
-                var toSend=getUserSyncResponseMessage(ret.messageId,functionRet);
-                if (this.isWebSocketConnected()){
-                    this.sendWebSocket(toSend);
-                }else{
-                    this.sendRest(toSend);
-                }
-            }else{
-                console.error("Sync message came but no function to handle it");
-            }
+			if (this.remoteMeConfig.onUserMessage != undefined) {
+				this.remoteMeConfig.onUserMessage(ret.senderDeviceId, ret.data);
+			}
 
 
-        }else{
-            console.error("Message id "+ret.typeId+" was not reconized");
-        }
+		} else if (ret.typeId == MessageType.USER_SYNC_MESSAGE) {
+			ret.size = data.popInt16();
+
+			ret.receiveDeviceId = data.popInt16();
+			ret.senderDeviceId = data.popInt16();
+			ret.messageId = data.popInt64();
+
+			console.info(ret.messageId);
+
+			ret.data = data.popRestBuffer();
+
+			if (this.remoteMeConfig.onUserSyncMessage != undefined) {
+				var functionRet = this.remoteMeConfig.onUserSyncMessage(ret.senderDeviceId, ret.data);
+
+				var toSend = getUserSyncResponseMessage(ret.messageId, functionRet);
+				if (this.isWebSocketConnected()) {
+					this.sendWebSocket(toSend);
+				} else {
+					this.sendRest(toSend);
+				}
+			} else {
+				console.error("Sync message came but no function to handle it");
+			}
 
 
-    }
+		} else if (ret.typeId == MessageType.SYNC_MESSAGE_RESPONSE) {
+			ret.size = data.popInt16();
+
+			ret.messageId = data.popInt64();
+
+			ret.data = data.popRestBuffer();
+
+			var functionToCall = RemoteMe.thiz.messageUserSyncIdToFunction[ret.messageId];
+			if (functionToCall != undefined) {
+				functionToCall(ret.data);
+				RemoteMe.thiz.messageUserSyncIdToFunction[ret.messageId] = undefined
+			} else {
+				console.error(`got reponse message but message id ${ret.messageId} was not recongized`);
+			}
+
+
+		} else {
+			console.error("Message id " + ret.typeId + " was not reconized");
+		}
+
+
+	}
 
 
 //--------------- webrtc
 
 
 	isWebRTCConnected() {
-		if ((this.peerConnection==undefined) || (this.openedChanel==undefined)){
+		if ((this.peerConnection == undefined) || (this.openedChanel == undefined)) {
 			return false;
-		}else{
+		} else {
 			return this.peerConnection.iceConnectionState == 'connected';
 		}
 
@@ -327,7 +357,7 @@ class RemoteMe {
 	}
 
 	onWebrtcChange(status) {
-		if (this.remoteMeConfig.webRTCConnectionChange){
+		if (this.remoteMeConfig.webRTCConnectionChange) {
 			this.remoteMeConfig.webRTCConnectionChange(status);
 		}
 	}
@@ -407,13 +437,13 @@ class RemoteMe {
 
 		this.peerConnection = new RTCPeerConnection(this.remoteMeConfig.pcConfig, this.remoteMeConfig.pcOptions);
 		this.peerConnection.oniceconnectionstatechange = function () {
-			if (RemoteMe.thiz.peerConnection.iceConnectionState == 'disconnected'){
+			if (RemoteMe.thiz.peerConnection.iceConnectionState == 'disconnected') {
 				RemoteMe.thiz.onWebrtcChange(WebrtcConnectingStatusEnum.DISCONNECTED);
-			}else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'failed'){
+			} else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'failed') {
 				RemoteMe.thiz.onWebrtcChange(WebrtcConnectingStatusEnum.FAILED);
-			}else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'connected'){
+			} else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'connected') {
 				RemoteMe.thiz.onWebrtcChange(WebrtcConnectingStatusEnum.CONNECTED);
-			}else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'checking'){
+			} else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'checking') {
 				RemoteMe.thiz.onWebrtcChange(WebrtcConnectingStatusEnum.CHECKING);
 			}
 
@@ -446,7 +476,7 @@ class RemoteMe {
 
 	onDataChannel(event) {
 		RemoteMe.thiz.openedChanel = event.channel;
-        RemoteMe.thiz.openedChanel.binaryType="arraybuffer";
+		RemoteMe.thiz.openedChanel.binaryType = "arraybuffer";
 
 		RemoteMe.thiz.logTrace("on data channel  " + event.channel.label);
 
@@ -459,7 +489,7 @@ class RemoteMe {
 		};*/
 		event.channel.onmessage = function (e) {
 			this.log("on Message by webrtc" + e);
-            this.processIncommingBinnaryMessage(e.data);
+			this.processIncommingBinnaryMessage(e.data);
 		}.bind(RemoteMe.thiz);
 	}
 
@@ -717,13 +747,13 @@ class RemoteMe {
 
 
 	sendUserMessageByFasterChannel(receiveDeviceId, data) {
-		if (receiveDeviceId>0){
+		if (receiveDeviceId > 0) {
 			if (this.isWebRTCConnected()) {
-				this.sendWebRtc(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data))
+				this.sendUserMessageWebrtc(receiveDeviceId, data)
 			} else {
-				this.sendWebSocket(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
+				this.sendUserMessageWebsocket(receiveDeviceId, data);
 			}
-		}else{
+		} else {
 			console.error("Cannot send message to deviceId with this id, did You configure your script correct ?");
 		}
 
@@ -744,10 +774,9 @@ class RemoteMe {
 		this.sendRest(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
 	}
 
-	sendUserSyncMessageRest(receiveDeviceId, data,reponseFunction) {
-		this.sendRestSync(getUserSyncMessage( receiveDeviceId, thisDeviceId,  data),reponseFunction);
+	sendUserSyncMessageRest(receiveDeviceId, data, reponseFunction) {
+		this.sendRestSync(getUserSyncMessage(receiveDeviceId, thisDeviceId, data), reponseFunction);
 	}
-
 
 
 }
