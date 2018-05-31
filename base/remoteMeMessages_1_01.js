@@ -189,7 +189,7 @@ class RemoteMeData {
 
 
 
-MessageType = {USER_MESSAGE:100, USER_MESSAGE_DELIVER_STATUS:101,USER_SYNC_MESSAGE:102,	SYNC_MESSAGE:120, SYNC_MESSAGE_RESPONSE:121,	REGISTER_DEVICE:200, REGISTER_CHILD_DEVICE:201,ADD_DATA:300,	LOG:20000,	SYSTEM_MESSAGE:20001};
+MessageType = {USER_MESSAGE:100, USER_MESSAGE_DELIVER_STATUS:101,USER_SYNC_MESSAGE:102,	SYNC_MESSAGE:120, SYNC_MESSAGE_RESPONSE:121,	REGISTER_DEVICE:200, REGISTER_CHILD_DEVICE:201,ADD_DATA:300,	LOG:20000,	SYSTEM_MESSAGE:20001,WEB_RTC_CONNECTION_CHANGE:20002};
 
 WSUserMessageSettings = { NO_RENEWAL: 0, RENEWAL_IF_FAILED: 1};
 AddDataMessageSetting = { NO_ROUND :  0, _1S :  1, _2S :  2, _5S :  3, _10S :  4, _15S :  5, _20S :  6, _30S :  7 };
@@ -253,6 +253,26 @@ function getUserMessage( userMessageSettings, receiverDeviceId,senderDeviceId, m
 	ret.putShort(senderDeviceId);
 	ret.putShort(messageId);
 	ret.putArray(data);
+
+	return ret.getBufferArray();
+
+}
+
+function getWebRTCConnectionStatusChangeMessage(webPageDeviceId, rasbperryPiDeviceId, status) {
+
+
+
+	size=2+2+1;
+	var ret = new RemoteMeData(4+size);
+
+
+	ret.putShort(MessageType.WEB_RTC_CONNECTION_CHANGE);
+	ret.putShort(size);
+
+	ret.putByte(status);
+	ret.putShort(webPageDeviceId);
+	ret.putShort(rasbperryPiDeviceId);
+
 
 	return ret.getBufferArray();
 

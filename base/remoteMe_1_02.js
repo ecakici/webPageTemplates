@@ -178,6 +178,9 @@ class RemoteMe {
 	}
 
 
+	sendWebRTCConnectionStatusChangeMessage(webPageDeviceId,rasbperryPiDeviceId,status){
+		this.sendWebSocket(getWebRTCConnectionStatusChangeMessage(webPageDeviceId, rasbperryPiDeviceId, status));
+	}
 	sendWebSocketText(text) {
 		if (this.isWebSocketConnected()) {
 			this.webSocket.send(text);
@@ -360,6 +363,7 @@ class RemoteMe {
 		if (this.remoteMeConfig.webRTCConnectionChange) {
 			this.remoteMeConfig.webRTCConnectionChange(status);
 		}
+		this.sendWebRTCConnectionStatusChangeMessage(thisDeviceId,raspberryPiDeviceId,status);
 	}
 
 
