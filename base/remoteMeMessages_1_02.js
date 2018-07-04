@@ -280,7 +280,26 @@ function getWebRTCConnectionStatusChangeMessage(webPageDeviceId, rasbperryPiDevi
 
 
 
+//getUserMessage(1234,12,[1,2,3,4,5,6]);
+//getUserMessage(1234,12,"remotemMe some text");
+function getSyncMessage(   receiverDeviceId,senderDeviceId,  data,messageId) {
 
+	data=getArray(data);
+
+
+	size=2+2+8+data.length;
+	var ret = new RemoteMeData(4+size);
+
+
+	ret.putShort( MessageType.USER_SYNC_MESSAGE);
+	ret.putShort(size);
+	ret.putShort(receiverDeviceId);
+	ret.putShort(senderDeviceId);
+	ret.putLong(messageId);
+	ret.putArray(data);
+
+	return ret.getBufferArray();
+}
 //getUserMessage(1234,12,[1,2,3,4,5,6]);
 //getUserMessage(1234,12,"remotemMe some text");
 function getUserSyncMessage(   receiverDeviceId,senderDeviceId,  data,messageId) {

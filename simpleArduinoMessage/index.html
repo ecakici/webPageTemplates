@@ -1,0 +1,74 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css"
+          integrity="sha384-Zug+QiDoJOrZ5t4lssLdxGhVrurbmBWopoEl+M6BdEfwnCJZtKxi1KgxUyJq13dy" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js"
+            integrity="sha384-a5N7Y/aK3qNeh15eJKGWxsqtnX/wWdSZSKp+81YjTmS15nvnvxKHuzaWwXHDli+4"
+            crossorigin="anonymous"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+            integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+            crossorigin="anonymous"></script>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/10.0.0/bootstrap-slider.min.js"
+            crossorigin="anonymous"></script>
+
+    <script src="//cdn.rawgit.com/Mikhus/canvas-gauges/gh-pages/download/2.1.4/all/gauge.min.js"></script>
+
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/10.0.0/css/bootstrap-slider.css"
+          crossorigin="anonymous">
+
+
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/remoteMe_1_04.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/remoteMeApiRest_1_03.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/remoteMeMessages_1_02.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/adapter.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/control.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/gauge.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/operationTimer.js"></script>
+    <script src="https://cdn.rawgit.com/remoteme/webPageTemplates/master/base/carController4WD.js"></script>
+
+
+
+    <script>
+
+		var thisDeviceId=####deviceId#;
+		var arduinoDeviceId=####arduinoDeviceId#;
+
+
+    </script>
+    <script src="script.js"></script>
+
+
+    <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+
+<body>
+
+<div class="statusButton">
+    <button type="button" class="btn btn-secondary" id="webSocketState">Web Socket</button>
+    <button type="button" class="btn btn-secondary" id="directWebSocketConnection">Direct WebSocket</button>
+
+</div>
+
+
+
+
+<div class="sendingComponent">
+    <input class="form-control" type="text" id="hexToSend" value="0 1 1 2 3 5 8 13 21"> </input>
+    <button type="button" class="btn btn-light" id="sendToArduino" >Send to Arduino</button>
+</div>
+
+
+<script>
+	setup();
+</script>
+</body>
+</html>

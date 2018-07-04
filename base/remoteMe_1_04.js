@@ -31,6 +31,7 @@ class RemoteMe {
 			mediaConstraints: {'mandatory': {'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true}}
 		};
 
+		this.directWebSocket=[];
 
 		this.pingWebSocketTimer;
 		this.remoteMeConfig;
@@ -752,10 +753,14 @@ class RemoteMe {
 
 	sendUserMessageByFasterChannel(receiveDeviceId, data) {
 		if (receiveDeviceId > 0) {
-			if (this.isWebRTCConnected()) {
+			if (this.isDirectWebSocketConnectionConnected(receiveDeviceId)){
+				this.sendUserMessageDirectWebsocket(receiveDeviceId, data);
+			}else if (this.isWebRTCConnected()) {
 				this.sendUserMessageWebrtc(receiveDeviceId, data)
-			} else {
+			} else if (this.isWebSocketConnected()){
 				this.sendUserMessageWebsocket(receiveDeviceId, data);
+			}else {
+				this.sendUserMessageRest(receiveDeviceId, data);
 			}
 		} else {
 			console.error("Cannot send message to deviceId with this id, did You configure your script correct ?");
@@ -769,6 +774,18 @@ class RemoteMe {
 		this.sendWebSocket(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
 	}
 
+	sendUserMessageDirectWebsocket(receiveDeviceId, data) {
+		var toSend = getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data);
+		if (this.isDirectWebSocketConnectionConnected(receiveDeviceId)) {
+			this.directWebSocket[receiveDeviceId].send(toSend);
+			return true;
+		} else {
+			this.log("Directwebsocket is not opened");
+			return false;
+		}
+
+		this.sendLocalWebSocket();
+	}
 
 	sendUserMessageWebrtc(receiveDeviceId, data) {
 		this.sendWebRtc(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
@@ -780,6 +797,44 @@ class RemoteMe {
 
 	sendUserSyncMessageRest(receiveDeviceId, data, reponseFunction) {
 		this.sendRestSync(getUserSyncMessage(receiveDeviceId, thisDeviceId, data), reponseFunction);
+	}
+
+
+
+
+	//------------------------ direct websocket
+
+	isDirectWebSocketConnectionConnected(deviceId){
+		return this.directWebSocket[deviceId] != undefined && this.directWebSocket[deviceId].readyState === this.directWebSocket[deviceId].OPEN;
+	}
+	directWebSocketConnectionDisconnect(deviceId){
+		if (this.isDirectWebSocketConnectionConnected(deviceId)){
+			this.directWebSocket[deviceId].close();
+		}
+		this.directWebSocket[deviceId] = undefined;
+	}
+
+	directWebSocketConnectionConnect(deviceId,webSocketLocalConnectionChange){
+		RemoteMeRest_getLocalWebSocketServer(deviceId,data=>{
+			this.directWebSocket[deviceId] = new WebSocket(`ws://${data.localIP}:${data.port}`);
+			this.directWebSocket[deviceId].binaryType = "arraybuffer";
+			this.directWebSocket[deviceId].onmessage = this.onMessageWS.bind(this);
+			if (webSocketLocalConnectionChange!=undefined){
+				this.directWebSocket[deviceId].onopen = ()=>webSocketLocalConnectionChange(deviceId,WebsocketConnectingStatusEnum.CONNECTED);
+				this.directWebSocket[deviceId].onerror = ()=>webSocketLocalConnectionChange(deviceId,WebsocketConnectingStatusEnum.ERROR);
+				this.directWebSocket[deviceId].onclose = ()=>webSocketLocalConnectionChange(deviceId,WebsocketConnectingStatusEnum.DISCONNECTED);
+			}
+		},error=>{
+			if (webSocketLocalConnectionChange!=undefined) {
+				webSocketLocalConnectionChange(deviceId, WebsocketConnectingStatusEnum.ERROR);
+			}
+			console.error("Cannot connect local webserver, check if tis enabled at Your arduino")
+		});
+
+
+
+
+
 	}
 
 
