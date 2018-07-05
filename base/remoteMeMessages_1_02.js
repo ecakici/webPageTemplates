@@ -115,6 +115,7 @@ class RemoteMeData {
 	}
 
 	putInt16(number) {
+
 		this.dataView.setInt16(this.pos,number);
 		this.pos+=2;
 
