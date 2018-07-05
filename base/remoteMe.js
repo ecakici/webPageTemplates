@@ -815,6 +815,11 @@ class RemoteMe {
 	}
 
 	directWebSocketConnectionConnect(deviceId,webSocketLocalConnectionChange){
+		if (location.protocol != 'http:')
+		{
+			location.href = 'http:' + window.location.href.substring(window.location.protocol.length);
+		}
+
 		RemoteMeRest_getLocalWebSocketServer(deviceId,data=>{
 			this.directWebSocket[deviceId] = new WebSocket(`ws://${data.localIP}:${data.port}`);
 			this.directWebSocket[deviceId].binaryType = "arraybuffer";
