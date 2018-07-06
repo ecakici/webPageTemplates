@@ -16,3 +16,8 @@
     float:left;
     width: calc(100% - 210px);
 }
+
+textarea{
+    width:100%;
+    height:200px;
+}

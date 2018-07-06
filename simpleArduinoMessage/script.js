@@ -3,7 +3,9 @@ var remoteme;
 function setup(){
 	remoteme = new RemoteMe({
 		automaticlyConnectWS: true,
-		webSocketConnectionChange: webSocketConnectionChange
+		webSocketConnectionChange: webSocketConnectionChange,
+		onUserSyncMessage: onUserSyncMessage,
+		onUserMessage:onUserMessage
 	});
 
 	$('#webSocketState').on('click', function() {
@@ -34,6 +36,29 @@ function setup(){
 
 }
 
+
+function onUserMessage(sender,data){
+	var remoteMeData = new RemoteMeData(data);
+	if (remoteMeData.popInt8()==0){
+		alert(byteArrayToString(remoteMeData.popRestBuffer()));
+	}else{
+		var txt = $("#incommingMessage");
+		txt.val( txt.val() + byteArrayToString(data)+"\n");
+	}
+
+
+}
+
+function onUserSyncMessage(sender,data){
+	var inputNumber = parseInt(byteArrayToString(data));
+
+
+	var ret= factor(inputNumber)+"";
+
+	return ret;
+
+
+}
 function webSocketLocalConnectionChange(deviceId,state){
 	$("#directWebSocketConnection").removeClass('btn-secondary');
 	$("#directWebSocketConnection").removeClass('btn-success');
@@ -61,6 +86,15 @@ function webSocketConnectionChange(state){
 		$("#webSocketState").addClass('btn-secondary');
 	}
 
+
+
+}
+
+function factor(num) {
+	if (num === 0)
+		return 1;
+	else
+		return num * factor( num - 1 );
 }
 
 

@@ -45,16 +45,7 @@ class RemoteMeData {
 
 
 	popInt64() {
-		var ret=0;
-		var array =  this.popArray(8);
-
-		var ret=0;
-		for(var i=0;i<8;i++){
-			ret =(ret<<8)+array[i];
-		}
-
-		return ret;
-
+		return this.popInt32()*Math.pow(2,32)+this.popInt32();
 	}
 
 
