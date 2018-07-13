@@ -300,8 +300,6 @@ class RemoteMe {
 			ret.senderDeviceId = data.popInt16();
 			ret.messageId = data.popInt64();
 
-			console.info(ret.messageId);
-
 			ret.data = data.popRestBuffer();
 
 			if (this.remoteMeConfig.onUserSyncMessage != undefined) {

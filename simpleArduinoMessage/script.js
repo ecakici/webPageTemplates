@@ -26,10 +26,8 @@ function setup(){
 	});
 
 	$('#sendToArduino').on('click', function() {
-		var notFormatted = $('#hexToSend').val();
-		console.info(notFormatted);
-		remoteme.sendUserMessageByFasterChannel(arduinoDeviceId,notFormatted.split(' ').map(Number));
-
+		var toSent = $('#hexToSend').val().split(' ').map(Number);
+		remoteme.sendUserMessageByFasterChannel(arduinoDeviceId,toSent);
 	});
 
 	remoteme.directWebSocketConnectionConnect(arduinoDeviceId,webSocketLocalConnectionChange);//connect just after start
@@ -39,26 +37,24 @@ function setup(){
 
 function onUserMessage(sender,data){
 	var remoteMeData = new RemoteMeData(data);
-	if (remoteMeData.popInt8()==0){
+	if (remoteMeData.popInt8()==1){
 		alert(byteArrayToString(remoteMeData.popRestBuffer()));
 	}else{
 		var txt = $("#incommingMessage");
 		txt.val( txt.val() + byteArrayToString(data)+"\n");
 	}
 
-
 }
 
 function onUserSyncMessage(sender,data){
 	var inputNumber = parseInt(byteArrayToString(data));
-
-
-	var ret= factor(inputNumber)+"";
-
+	var ret= (inputNumber*3)+"";
 	return ret;
-
-
 }
+
+
+
+
 function webSocketLocalConnectionChange(deviceId,state){
 	$("#directWebSocketConnection").removeClass('btn-secondary');
 	$("#directWebSocketConnection").removeClass('btn-success');
@@ -85,17 +81,8 @@ function webSocketConnectionChange(state){
 	}else if (state==WebsocketConnectingStatusEnum.DISCONNECTED ){
 		$("#webSocketState").addClass('btn-secondary');
 	}
-
-
-
 }
 
-function factor(num) {
-	if (num === 0)
-		return 1;
-	else
-		return num * factor( num - 1 );
-}
 
 
 
