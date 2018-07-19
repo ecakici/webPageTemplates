@@ -554,7 +554,6 @@ class RemoteMe {
 			var candidate = new RTCIceCandidate({sdpMLineIndex: dataJson.label, candidate: dataJson.candidate});
 			this.peerConnection.addIceCandidate(candidate, this.aic_success_cb, this.aic_failure_cb);
 
-			this.logTrace("sdpMLineIndex is null >>>>>> " + dataJson.sdpMLineIndex);
 
 
 		}
