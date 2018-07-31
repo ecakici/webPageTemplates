@@ -58,6 +58,12 @@ class RemoteMe {
 		}.bind(this);
 	}
 
+	getVariablesObserver(){
+		if (this.variablesObserver==undefined){
+			this.variablesObserver = new VariablesObserver(this);
+		}
+		return this.variablesObserver;
+	}
 
 	log(text) {
 		var now = (window.performance.now() / 1000).toFixed(3);
@@ -129,6 +135,10 @@ class RemoteMe {
 
 	sendWebSocket(bytearrayBuffer) {
 		if (this.isWebSocketConnected()) {
+			if (  bytearrayBuffer instanceof RemoteMeData){
+				bytearrayBuffer=bytearrayBuffer.getBufferArray();
+			}
+
 			this.webSocket.send(bytearrayBuffer);
 			return true;
 		} else {
@@ -139,11 +149,15 @@ class RemoteMe {
 
 
 	sendRest(bytearrayBuffer) {
+		if (  bytearrayBuffer instanceof RemoteMeData){
+			bytearrayBuffer=bytearrayBuffer.getBufferArray();
+		}
 		var url = this.getRestUrl() + "message/sendMessage/";
 		var xhttp = new XMLHttpRequest();
 		xhttp.responseType = "arraybuffer";
 		xhttp.open("POST", url, true);
 		xhttp.setRequestHeader("Content-type", "text/plain");
+
 		xhttp.send(bytearrayBuffer);
 
 
@@ -749,7 +763,7 @@ class RemoteMe {
 
 
 	sendUserMessageByFasterChannel(receiveDeviceId, data) {
-		if (receiveDeviceId > 0) {
+		if (receiveDeviceId >= 0) {
 			if (this.isDirectWebSocketConnectionConnected(receiveDeviceId)){
 				this.sendUserMessageDirectWebsocket(receiveDeviceId, data);
 			}else if (this.isWebRTCConnected()) {
@@ -763,8 +777,8 @@ class RemoteMe {
 			console.error("Cannot send message to deviceId with this id, did You configure your script correct ?");
 		}
 
-
 	}
+
 
 
 	sendUserMessageWebsocket(receiveDeviceId, data) {
@@ -773,6 +787,10 @@ class RemoteMe {
 
 	sendUserMessageDirectWebsocket(receiveDeviceId, data) {
 		var toSend = getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data);
+		sendDirectWebsocket(receiveDeviceId,toSend);
+
+	}
+	sendDirectWebsocket(receiveDeviceId, toSend) {
 		if (this.isDirectWebSocketConnectionConnected(receiveDeviceId)) {
 			this.directWebSocket[receiveDeviceId].send(toSend);
 			return true;
@@ -780,10 +798,7 @@ class RemoteMe {
 			this.log("Directwebsocket is not opened");
 			return false;
 		}
-
-		this.sendLocalWebSocket();
 	}
-
 	sendUserMessageWebrtc(receiveDeviceId, data) {
 		this.sendWebRtc(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
 	}
