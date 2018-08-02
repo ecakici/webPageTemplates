@@ -1,3 +1,29 @@
+VariableOberverType= {BOOLEAN:0,INTEGER:1}
+ChangeMessageSetting={ NO_RENEWAL:0,RENEWAL_IF_FAILED:1}
+
+MessageType = {USER_MESSAGE:100,CHANGE_MESSAGE:103, USER_MESSAGE_DELIVER_STATUS:101,USER_SYNC_MESSAGE:102,
+	OBSERVER_CHANGE_MESSAGE:103, OBSERVER_CHANGE_PROPAGATE_MESSAGE:104,
+	SYNC_MESSAGE:120, SYNC_MESSAGE_RESPONSE:121,
+	OBSERVER_REGISTER_MESSAGE:122,
+	REGISTER_DEVICE:200, REGISTER_CHILD_DEVICE:201,ADD_DATA:300,
+	LOG:20000,
+	SYSTEM_MESSAGE:20001,
+	WEB_RTC_CONNECTION_CHANGE:20002
+};
+
+WSUserMessageSettings = { NO_RENEWAL: 0, RENEWAL_IF_FAILED: 1};
+AddDataMessageSetting = { NO_ROUND :  0, _1S :  1, _2S :  2, _5S :  3, _10S :  4, _15S :  5, _20S :  6, _30S :  7 };
+DeviceType = { NETWORK: 1, SMARTPHONE: 2, WEBPAGE: 3, JSSCRIPT: 4 };
+LogLevel = { INFO :  1, WARN :  2, ERROR :  3 };
+LeafDeviceType = { LD_OTHER :  1, LD_EXTERNAL_SCRIPT :  2 ,LD_SERIAL :  3, LD_NRF24 :  4 , LD_WEB_SOCKET :  5 };
+
+SyncMessageType = { USER : 0,GET_WEBRTC_CONENCTED_DEVICE_ID: 1};
+
+AndroidMessageIcon = {DEFAULT_ICON:1,PERSON_ICON:2,THIEF_ICON:3,WINDOW_OPEN_ICON:4,BUNNY_ICON:5};
+AndroidMessageSound= {DEFAULT_SOUND:1};
+
+
+
 class RemoteMeData {
 
 
@@ -61,6 +87,18 @@ class RemoteMeData {
 		return ret;
 	}
 
+
+	popString(){
+		var data=[];
+
+
+		do{
+			data.push(this.popByte());
+		}while (data[data.length-1]!=0);
+		data.pop();
+		return byteArrayToString(new Uint8Array(data));
+
+	}
 	popUint32() {
 		var ret= this.dataView.getUint32(this.pos);
 		this.pos+=4;
@@ -179,21 +217,7 @@ class RemoteMeData {
 	}
 }
 
-VariableOberverType= {BOOLEAN:0,NUMBER:1}
-ChangeMessageSetting={ NO_RENEWAL:0,RENEWAL_IF_FAILED:1}
 
-MessageType = {USER_MESSAGE:100,CHANGE_MESSAGE:103, USER_MESSAGE_DELIVER_STATUS:101,USER_SYNC_MESSAGE:102,	SYNC_MESSAGE:120, SYNC_MESSAGE_RESPONSE:121,REBISTER_OBSERVER_MESSAGE:122,	REGISTER_DEVICE:200, REGISTER_CHILD_DEVICE:201,ADD_DATA:300,	LOG:20000,	SYSTEM_MESSAGE:20001,WEB_RTC_CONNECTION_CHANGE:20002};
-
-WSUserMessageSettings = { NO_RENEWAL: 0, RENEWAL_IF_FAILED: 1};
-AddDataMessageSetting = { NO_ROUND :  0, _1S :  1, _2S :  2, _5S :  3, _10S :  4, _15S :  5, _20S :  6, _30S :  7 };
-DeviceType = { NETWORK: 1, SMARTPHONE: 2, WEBPAGE: 3, JSSCRIPT: 4 };
-LogLevel = { INFO :  1, WARN :  2, ERROR :  3 };
-LeafDeviceType = { LD_OTHER :  1, LD_EXTERNAL_SCRIPT :  2 ,LD_SERIAL :  3, LD_NRF24 :  4 , LD_WEB_SOCKET :  5 };
-
-SyncMessageType = { USER : 0,GET_WEBRTC_CONENCTED_DEVICE_ID: 1};
-
-AndroidMessageIcon = {DEFAULT_ICON:1,PERSON_ICON:2,THIEF_ICON:3,WINDOW_OPEN_ICON:4,BUNNY_ICON:5};
-AndroidMessageSound= {DEFAULT_SOUND:1};
 
 
 function getArray(data){

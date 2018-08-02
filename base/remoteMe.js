@@ -53,7 +53,9 @@ class RemoteMe {
 		}
 
 		window.onbeforeunload = function (event) {
+			this.disconnectWebSocket();
 			this.disconnectWebRTC();
+
 
 		}.bind(this);
 	}
@@ -346,6 +348,9 @@ class RemoteMe {
 			}
 
 
+		}else if (ret.typeId == MessageType.OBSERVER_CHANGE_PROPAGATE_MESSAGE) {
+			this.getVariablesObserver()._onObserverPropagateMesage(data);
+
 		} else {
 			console.error("Message id " + ret.typeId + " was not reconized");
 		}
@@ -373,10 +378,12 @@ class RemoteMe {
 	}
 
 	onWebrtcChange(status) {
-		if (this.remoteMeConfig.webRTCConnectionChange) {
-			this.remoteMeConfig.webRTCConnectionChange(status);
+		if (raspberryPiDeviceId!=undefined) {
+			if (this.remoteMeConfig.webRTCConnectionChange) {
+				this.remoteMeConfig.webRTCConnectionChange(status);
+			}
+			this.sendWebRTCConnectionStatusChangeMessage(thisDeviceId, raspberryPiDeviceId, status);
 		}
-		this.sendWebRTCConnectionStatusChangeMessage(thisDeviceId,raspberryPiDeviceId,status);
 	}
 
 
@@ -417,8 +424,8 @@ class RemoteMe {
 
 	disconnectWebRTC() {
 
-		if (!this.isWebSocketConnected()) {
-			console.error("websocket is not connected cannot disconnect  webrtc connection");
+		if (!this.isWebRTCConnected()) {
+			console.info("webrtc is not connected cannot disconnect  webrtc connection");
 			return;
 		}
 
