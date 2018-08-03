@@ -20,7 +20,7 @@ class RemoteMe {
 		RemoteMe.thiz = this;
 		RemoteMe.thiz.messageUserSyncIdToFunction = [];
 		var remoteMeDefaultConfig = {
-			automaticlyConnectWS: false,
+			automaticlyConnectWS: true,
 			automaticlyConnectWebRTC: false,
 			webSocketConnectionChange: undefined,
 			webRtcConnectionChange: undefined,
@@ -39,6 +39,8 @@ class RemoteMe {
 		this.openedChanel = undefined;
 		this.messageCounter = 0;
 		this.peerConnection;
+		this.observers=undefined;
+
 
 
 		this.remoteMeConfig = remoteMeDefaultConfig;
@@ -60,11 +62,11 @@ class RemoteMe {
 		}.bind(this);
 	}
 
-	getVariablesObserver(){
-		if (this.variablesObserver==undefined){
-			this.variablesObserver = new VariablesObserver(this);
+	getObservers(){
+		if (this.observers==undefined){
+			this.observers = new Observers(this);
 		}
-		return this.variablesObserver;
+		return this.observers;
 	}
 
 	log(text) {
@@ -349,7 +351,7 @@ class RemoteMe {
 
 
 		}else if (ret.typeId == MessageType.OBSERVER_CHANGE_PROPAGATE_MESSAGE) {
-			this.getVariablesObserver()._onObserverPropagateMesage(data);
+			this.getObservers()._onObserverPropagateMesage(data);
 
 		} else {
 			console.error("Message id " + ret.typeId + " was not reconized");

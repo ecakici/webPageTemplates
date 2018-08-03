@@ -30,7 +30,7 @@ class ToSend{
 
 }
 
-class VariablesObserver {
+class Observers {
 
 
 	begin(){
@@ -136,6 +136,13 @@ class VariablesObserver {
 		this.toSend=[];
 
 
+	}
+	observeBoolean(name,onChange) {
+		this.observe(name, VariableOberverType.BOOLEAN, onChange);
+	}
+
+	observeInteger(name,onChange){
+		this.observe(name,VariableOberverType.INTEGER,onChange);
 	}
 
 	observe(name,type,onChange){
