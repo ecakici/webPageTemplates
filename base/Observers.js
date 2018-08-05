@@ -146,7 +146,7 @@ class Observers {
 	}
 
 	observe(name,type,onChange){
-		this.observables[name]=onChange;
+
 		var size=2+2+2+name.length+1;
 
 
