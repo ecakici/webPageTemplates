@@ -353,6 +353,8 @@ class RemoteMe {
 		}else if (ret.typeId == MessageType.OBSERVER_CHANGE_PROPAGATE_MESSAGE) {
 			this.getObservers()._onObserverPropagateMesage(data);
 
+		}else if (ret.typeId==0) {
+			//ping
 		} else {
 			console.error("Message id " + ret.typeId + " was not reconized");
 		}
