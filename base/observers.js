@@ -13,6 +13,11 @@ class ToSend{
 		switch (this.type){
 			case VariableOberverType.BOOLEAN:ret+=1; break;
 			case VariableOberverType.INTEGER:ret+=4; break;
+			case VariableOberverType.TEXT:ret+=getArray(this.values[0]).length+1; break;
+			case VariableOberverType.SMALL_INTEGER_3:ret+=6; break;
+			case VariableOberverType.SMALL_INTEGER_2:ret+=4; break;
+			case VariableOberverType.INTEGER_BOOLEAN:ret+=5; break;
+			case VariableOberverType.DOUBLE:ret+=8; break;
 
 		}
 		return ret;
@@ -23,6 +28,28 @@ class ToSend{
 		switch (this.type){
 			case VariableOberverType.BOOLEAN:remoteMeData.putByte(this.values[0]?1:0); break;
 			case VariableOberverType.INTEGER:remoteMeData.putInt32(this.values[0]); break;
+			case VariableOberverType.TEXT:remoteMeData.putString(this.values[0]?1:0); break;
+			case VariableOberverType.SMALL_INTEGER_3:
+				remoteMeData.putInt16(this.values[0]);
+				remoteMeData.putInt16(this.values[1]);
+				remoteMeData.putInt16(this.values[2]);
+
+				break;
+			case VariableOberverType.SMALL_INTEGER_2:
+				remoteMeData.putInt16(this.values[0]);
+				remoteMeData.putInt16(this.values[1]);
+
+				break;
+
+			case VariableOberverType.INTEGER_BOOLEAN:
+				remoteMeData.putInt32(this.values[0]);
+				remoteMeData.putByte(this.values[1]?1:0);
+
+				break;
+
+			case VariableOberverType.DOUBLE:remoteMeData.putDouble(this.values[0]); break;
+
+
 
 		}
 
@@ -84,6 +111,34 @@ class Observers {
 	setBoolean(name,value){
 		this.set(name,VariableOberverType.BOOLEAN,[value]);
 	}
+
+	setInteger(name,value){
+		this.set(name,VariableOberverType.INTEGER,[value]);
+	}
+
+	setText(name,value){
+		this.set(name,VariableOberverType.TEXT,[value]);
+	}
+
+	setSmallInteger3(name,value,value2,value3){
+		this.set(name,VariableOberverType.SMALL_INTEGER_3,[value,value2,value3]);
+	}
+
+	setSmallInteger2(name,value,value2){
+		this.set(name,VariableOberverType.SMALL_INTEGER_2,[value,value2]);
+	}
+
+	setSmallIntegerBoolean(name,value,value2){
+		this.set(name,VariableOberverType.INTEGER_BOOLEAN,[value,value2]);
+	}
+
+	setDouble(name,value){
+		this.set(name,VariableOberverType.DOUBLE,[value]);
+	}
+
+
+
+
 	set(name,type,values){
 		var current=new ToSend();
 		current.name=name;
@@ -145,6 +200,30 @@ class Observers {
 	observeInteger(name,onChange){
 		this.observe(name,VariableOberverType.INTEGER,onChange);
 	}
+
+
+	observeText(name,onChange){
+		this.observe(name,VariableOberverType.TEXT,onChange);
+	}
+
+	observeSmallInteger3(name,onChange){
+		this.observe(name,VariableOberverType.SMALL_INTEGER_3,onChange);
+	}
+
+	observeSmallInteger2(name,onChange){
+		this.observe(name,VariableOberverType.SMALL_INTEGER_2,onChange);
+	}
+
+	observeSmallIntegerBoolean(name,onChange){
+		this.observe(name,VariableOberverType.INTEGER_BOOLEAN,onChange);
+	}
+
+	observeDouble(name,onChange){
+		this.observe(name,VariableOberverType.DOUBLE,onChange);
+	}
+
+
+
 
 	observe(name,type,onChange){
 
