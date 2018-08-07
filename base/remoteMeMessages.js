@@ -46,6 +46,13 @@ class RemoteMeData {
 
 	}
 
+
+	popDouble() {
+		return this.popFloat64();
+	}
+
+
+
 	popInt8() {
 		var ret= this.dataView.getInt8(this.pos);
 		this.pos+=1;
@@ -188,9 +195,14 @@ class RemoteMeData {
 	}
 
 	putArray(data) {
+		console.info("------------");
+		console.info(getArray(data));
+		console.info(getArray(data).forEach);
+		getArray(data).forEach(x=>console.info(x));
 		getArray(data).forEach(element=>this.dataView.setInt8(this.pos++,element));
-
+		console.info("X------------");
 	}
+
 
 	putString(data){
 		this.putArray(getArray(data));

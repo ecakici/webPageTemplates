@@ -28,7 +28,7 @@ class ToSend{
 		switch (this.type){
 			case VariableOberverType.BOOLEAN:remoteMeData.putByte(this.values[0]?1:0); break;
 			case VariableOberverType.INTEGER:remoteMeData.putInt32(this.values[0]); break;
-			case VariableOberverType.TEXT:remoteMeData.putString(this.values[0]?1:0); break;
+			case VariableOberverType.TEXT:remoteMeData.putString(this.values[0]); break;
 			case VariableOberverType.SMALL_INTEGER_3:
 				remoteMeData.putInt16(this.values[0]);
 				remoteMeData.putInt16(this.values[1]);
@@ -96,8 +96,18 @@ class Observers {
 					toCall(remoteMeData.popByte()==1);
 				}else if (type ==VariableOberverType.INTEGER){
 					toCall(remoteMeData.popInt32());
+				}else if (type ==VariableOberverType.INTEGER_BOOLEAN){
+					toCall(remoteMeData.popInt32(),remoteMeData.popByte()==1);
+				}else if (type ==VariableOberverType.SMALL_INTEGER_2){
+					toCall(remoteMeData.popInt16(),remoteMeData.popInt16());
+				}else if (type ==VariableOberverType.SMALL_INTEGER_3){
+					toCall(remoteMeData.popInt16(),remoteMeData.popInt16(),remoteMeData.popInt16());
+				}else if (type ==VariableOberverType.DOUBLE){
+					toCall(remoteMeData.popDouble());
+				}else if (type ==VariableOberverType.TEXT){
+					toCall(remoteMeData.popString());
 				}else{
-					console.warn(" observer type didnt found if u think its but contact me contact@remoteme.org");
+					console.warn(" observer type didnt found if u think its bug contact me contact@remoteme.org");
 				}
 			}else{
 				console.warn("ddint found observer with name "+name+" and type"+type);
@@ -128,7 +138,7 @@ class Observers {
 		this.set(name,VariableOberverType.SMALL_INTEGER_2,[value,value2]);
 	}
 
-	setSmallIntegerBoolean(name,value,value2){
+	setIntegerBoolean(name,value,value2){
 		this.set(name,VariableOberverType.INTEGER_BOOLEAN,[value,value2]);
 	}
 
@@ -214,7 +224,7 @@ class Observers {
 		this.observe(name,VariableOberverType.SMALL_INTEGER_2,onChange);
 	}
 
-	observeSmallIntegerBoolean(name,onChange){
+	observeIntegerBoolean(name,onChange){
 		this.observe(name,VariableOberverType.INTEGER_BOOLEAN,onChange);
 	}
 
@@ -239,7 +249,7 @@ class Observers {
 		ret.putShort(type);
 		ret.putString(name);
 
-		console.info(ret.getArray());
+
 
 		if (this.remoteMe.isWebSocketConnected()){
 			this.remoteMe.sendWebSocket(ret);
