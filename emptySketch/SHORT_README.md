@@ -1,1 +1,0 @@
-Just configured empty sketch

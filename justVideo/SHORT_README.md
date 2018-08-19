@@ -1,1 +1,0 @@
-Camera preview in browser
