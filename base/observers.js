@@ -18,6 +18,7 @@ class ToSend{
 			case VariableOberverType.SMALL_INTEGER_2:ret+=4; break;
 			case VariableOberverType.INTEGER_BOOLEAN:ret+=5; break;
 			case VariableOberverType.DOUBLE:ret+=8; break;
+			case VariableOberverType.TEXT_2:ret+=getArray(this.values[0]).length+1+getArray(this.values[1]).length+1; break;
 
 		}
 		return ret;
@@ -49,7 +50,11 @@ class ToSend{
 
 			case VariableOberverType.DOUBLE:remoteMeData.putDouble(this.values[0]); break;
 
+			case VariableOberverType.TEXT_2:
+				remoteMeData.putString(this.values[0]);
+				remoteMeData.putString(this.values[1]);
 
+				break;
 
 		}
 
@@ -106,6 +111,8 @@ class Observers {
 					toCall(remoteMeData.popDouble());
 				}else if (type ==VariableOberverType.TEXT){
 					toCall(remoteMeData.popString());
+				}else if (type ==VariableOberverType.TEXT_2){
+					toCall(remoteMeData.popString(),remoteMeData.popString());
 				}else{
 					console.warn(" observer type didnt found if u think its bug contact me contact@remoteme.org");
 				}
@@ -147,7 +154,9 @@ class Observers {
 	}
 
 
-
+	setText2(name,value,value2){
+		this.set(name,VariableOberverType.TEXT_2,[value,value2]);
+	}
 
 	set(name,type,values){
 		var current=new ToSend();
@@ -232,6 +241,9 @@ class Observers {
 		this.observe(name,VariableOberverType.DOUBLE,onChange);
 	}
 
+	observeText2(name,onChange){
+		this.observe(name,VariableOberverType.TEXT_2,onChange);
+	}
 
 
 
