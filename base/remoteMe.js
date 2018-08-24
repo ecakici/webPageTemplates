@@ -64,7 +64,7 @@ class RemoteMe {
 
 	getObservers(){
 		if (this.observers==undefined){
-			this.observers = new Observers(this);
+			this.observers = new Variables(this);
 		}
 		return this.observers;
 	}

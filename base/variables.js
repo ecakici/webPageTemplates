@@ -62,7 +62,7 @@ class ToSend{
 
 }
 
-class Observers {
+class Variables {
 
 
 	begin(){
@@ -114,7 +114,7 @@ class Observers {
 				}else if (type ==VariableOberverType.TEXT_2){
 					toCall(remoteMeData.popString(),remoteMeData.popString());
 				}else{
-					console.warn(" observer type didnt found if u think its bug contact me contact@remoteme.org");
+					console.warn(" variable type didnt found if u think its bug contact me contact@remoteme.org");
 				}
 			}else{
 				console.warn("ddint found observer with name "+name+" and type"+type);
