@@ -39,7 +39,7 @@ class RemoteMe {
 		this.openedChanel = undefined;
 		this.messageCounter = 0;
 		this.peerConnection;
-		this.observers=undefined;
+		this.variables=undefined;
 
 
 
@@ -62,11 +62,11 @@ class RemoteMe {
 		}.bind(this);
 	}
 
-	getObservers(){
-		if (this.observers==undefined){
-			this.observers = new Variables(this);
+	getVariables(){
+		if (this.variables==undefined){
+			this.variables = new Variables(this);
 		}
-		return this.observers;
+		return this.variables;
 	}
 
 	log(text) {
@@ -350,8 +350,8 @@ class RemoteMe {
 			}
 
 
-		}else if (ret.typeId == MessageType.OBSERVER_CHANGE_PROPAGATE_MESSAGE) {
-			this.getObservers()._onObserverPropagateMesage(data);
+		}else if (ret.typeId == MessageType.VARIABLE_CHANGE_PROPAGATE_MESSAGE) {
+			this.getVariables()._onObserverPropagateMesage(data);
 
 		}else if (ret.typeId==0) {
 			//ping

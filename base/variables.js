@@ -180,7 +180,7 @@ class Variables {
 			size+=current.getSize();
 		}
 		var ret = new RemoteMeData(4+size);
-		ret.putShort(MessageType.OBSERVER_CHANGE_MESSAGE);
+		ret.putShort(MessageType.VARIABLE_CHANGE_MESSAGE);
 		ret.putShort(size);
 		ret.putShort(thisDeviceId);
 
