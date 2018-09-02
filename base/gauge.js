@@ -95,7 +95,6 @@ class TurnMeter {
 			needleWidth: 12,
 			highlights: [],
 			colorNeedle: "#dd0031",
-			colorNeedle: "#dd0031",
 			animationDuration: -1,
 			animationRule: "linear",
 			animationTarget: "plate",

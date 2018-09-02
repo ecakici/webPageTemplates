@@ -1,12 +1,12 @@
-#define WIFI_NAME ""
-#define WIFI_PASSWORD ""
-#define DEVICE_ID 207
-#define DEVICE_NAME "wemos"
-#define TOKEN ""
+#define WIFI_NAME "ania24"
+#define WIFI_PASSWORD "tuchowkrakow"
+#define DEVICE_ID 123
+#define DEVICE_NAME "someName"
+#define TOKEN "2342rwefs"
 
 #include <ArduinoHttpClient.h>
 #include <RemoteMe.h>
-#include <Observers.h>
+#include <Variables.h>
 #include <ESP8266WiFi.h>
 
 #include <ESP8266WiFiMulti.h>
@@ -22,9 +22,24 @@ void onChange(boolean b) {
 	digitalWrite(LEDpin, b ? HIGH : LOW);
 }
 
+//*************** CODE FOR CONFORTABLE VARIABLE SET *********************
+
+inline void setMaciekV(boolean b) { remoteMe.getVariables()->setBoolean("maciekV", b); }
+inline void setMaciekI(int32_t i) { remoteMe.getVariables()->setInteger("maciekI", i); }
+
+//*************** IMPLEMENT FUNCTIONS BELOW *********************
+
+
+void onMaciekVChange(boolean b) {
+	//your code here
+}
+
+void onMaciekIChange(int32_t i) {
+	//your code here
+}
+
 
 void setup() {
-	pinMode(LEDpin, OUTPUT);
 	
 	WiFiMulti.addAP(WIFI_NAME, WIFI_PASSWORD);
 	while (WiFiMulti.run() != WL_CONNECTED) {
@@ -35,8 +50,12 @@ void setup() {
 
 	remoteMe.sendRegisterDeviceMessage(DEVICE_NAME);
 
-	remoteMe.getObservers()->observeBoolean("led",onChange);
-	remoteMe.getObservers()->setBoolean("led", false);
+	remoteMe.getVariables()->observeBoolean("maciekV", onMaciekVChange});
+
+	remoteMe.getVariables()->observeInteger("maciekI", onMaciekIChange});
+
+	//----------- YOUR CODE BELOW
+
 }
 
 

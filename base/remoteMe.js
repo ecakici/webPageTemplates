@@ -15,8 +15,13 @@ WebsocketConnectingStatusEnum = {
 
 class RemoteMe {
 
-
 	constructor(config = undefined) {
+		if (RemoteMe.thiz !=undefined){
+			console.error("Remoteme tried to construct more then once");
+			throw "Remoteme tried to construct twice";
+		}
+
+
 		RemoteMe.thiz = this;
 		RemoteMe.thiz.messageUserSyncIdToFunction = [];
 		var remoteMeDefaultConfig = {
@@ -65,6 +70,7 @@ class RemoteMe {
 	getVariables(){
 		if (this.variables==undefined){
 			this.variables = new Variables(this);
+			console.info(">>>>>>>>>>>>>");
 		}
 		return this.variables;
 	}
