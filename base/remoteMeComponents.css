@@ -12,7 +12,9 @@
     top: 6px;
 
 }
-
+.mdl-radio{
+    margin-right: 25px;
+}
 
 .color-badge-parent{
     position:relative;

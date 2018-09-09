@@ -9,7 +9,7 @@ function readProperties(selector){
 	if ($(selector).attr("label") != undefined) {
 		label = $(selector).attr("label");
 	} else {
-		label = prop.name;
+		label = name;
 	}
 
 	if ($(selector).attr("disabled") != undefined) {
@@ -46,16 +46,25 @@ function addButton(selector){
 		}
 	});
 
-	$(element).click(()=>{
-		var value=!$(element).hasClass("mdl-button--accent");
-		remoteme.getVariables().setBoolean(prop.name,value);
-	});
+	if (!prop.disabled){
+		$(element).click(()=>{
+			var value=!$(element).hasClass("mdl-button--accent");
+			remoteme.getVariables().setBoolean(prop.name,value);
+		});
+	}
+
 	$(selector).append(element);
 	componentHandler.upgradeElement(	element.get()[0]);
 }
 
 
 function addColorChange(selector){
+
+	var max=255;
+	if ($(selector).attr( "max" )!=undefined){
+		max=$(selector).attr( "max" );
+	}
+	var mn=max/255;
 
 	var prop = readProperties(selector);
 
@@ -86,7 +95,7 @@ function addColorChange(selector){
 	$(dialog.find('.select').get(0)).click(()=>{
 		button.children(".color-badge").css("background-color", colorPicker.color.hexString);
 
-		remoteme.getVariables().setSmallInteger3(prop.name,colorPicker.color.rgb.r,colorPicker.color.rgb.g,colorPicker.color.rgb.b);
+		remoteme.getVariables().setSmallInteger3(prop.name,colorPicker.color.rgb.r*mn,colorPicker.color.rgb.g*mn,colorPicker.color.rgb.b*mn);
 
 		dialog.get()[0].close();
 	});
@@ -107,14 +116,19 @@ function addColorChange(selector){
 
 
 
-	var button = $(`<button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect color-badge-parent"><span  class="color-badge"></span> ${prop.label}	</button>`);
+	var button = $(`<button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect color-badge-parent" ${prop.disabled?'disabled':''}><span  class="color-badge"></span> ${prop.label}	</button>`);
 
-	$(button).click(()=>{
-		dialog.get()[0].showModal();
-	});
+	if (!prop.disabled) {
+		$(button).click(() => {
+			dialog.get()[0].showModal();
+		});
+	}
 
 
 	remoteme.getVariables().observeSmallInteger3(prop.name,(r,g,b)=>{
+		r=Math.round(r/mn);
+		g=Math.round(g/mn);
+		b=Math.round(b/mn);
 		if (colorPicker.color!=undefined){
 			colorPicker.color.rgb = { r: r, g: g, b: b };
 		}
@@ -525,21 +539,21 @@ function replace(){
 			addButton(variable);
 		}else if ($(variable).attr( "type" ) =="BOOLEAN" && $(variable).attr( "component" ) =="checkbox"){
 			addCheckBox(variable);
-		}else if ($(variable).attr( "type" ) =="BOOLEAN" && $(variable).attr( "component" ) =="switch"){
+		}else if ($(variable).attr( "type" ) =="BOOLEAN" && $(variable).attr( "component" ) =="switcher"){
 			addCheckBox(variable,true);
 		}else if ($(variable).attr( "type" ) =="INTEGER" && $(variable).attr( "component" ) =="slider"){
 			addSlider(variable);
 		}else if ($(variable).attr( "type" ) =="INTEGER" && $(variable).attr( "component" ) =="gauge"){
 			addGauge(variable);
-		}else if ($(variable).attr( "type" ) =="SMALL_INTEGER_3" && $(variable).attr( "component" ) =="sliders"){
+		}else if ($(variable).attr( "type" ) =="SMALL_INTEGER_3" && $(variable).attr( "component" ) =="slider"){
 			add3Sliders(variable);
-		}else if ($(variable).attr( "type" ) =="SMALL_INTEGER_2" && $(variable).attr( "component" ) =="sliders"){
+		}else if ($(variable).attr( "type" ) =="SMALL_INTEGER_2" && $(variable).attr( "component" ) =="slider"){
 			add2Sliders(variable);
-		}else if ($(variable).attr( "type" ) =="INTEGER" && $(variable).attr( "component" ) =="list"){
+		}else if ($(variable).attr( "type" ) =="INTEGER" && $(variable).attr( "component" ) =="dropDownList"){
 			addList(variable,VariableOberverType.INTEGER);
-		}else if ($(variable).attr( "type" ) =="TEXT" && $(variable).attr( "component" ) =="list"){
+		}else if ($(variable).attr( "type" ) =="TEXT" && $(variable).attr( "component" ) =="dropDownList"){
 			addList(variable,VariableOberverType.TEXT);
-		}else if ($(variable).attr( "type" ) =="DOUBLE" && $(variable).attr( "component" ) =="list"){
+		}else if ($(variable).attr( "type" ) =="DOUBLE" && $(variable).attr( "component" ) =="dropDownList"){
 			addList(variable,VariableOberverType.DOUBLE);
 		}
 
@@ -560,7 +574,7 @@ function replace(){
 			addTextField(variable,VariableOberverType.DOUBLE);
 		}
 
-		else if ($(variable).attr( "type" ) =="COLOR" ){
+		else if ($(variable).attr( "type" ) =="SMALL_INTEGER_3" && $(variable).attr( "component" ) =="color"){
 			addColorChange(variable);
 		}
 	}

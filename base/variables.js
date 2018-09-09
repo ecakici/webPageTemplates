@@ -177,7 +177,7 @@ class Variables {
 	}
 
 	setSmallInteger3(name, value, value2, value3) {
-		this.set(name, VariableOberverType.SMALL_INTEGER_3, [value, value2, value3]);
+		this.set(name, VariableOberverType.SMALL_INTEGER_3, [Math.round(value), Math.round(value2), Math.round(value3)]);
 	}
 
 	setSmallInteger2(name, value, value2) {

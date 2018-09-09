@@ -42,7 +42,7 @@
 
 
 <variable type="TEXT" name="test1"  label="test1" component="textField" disabled></variable>
-<!--
+
 <variable type="TEXT" name="test1"  label="test1sds" component="textField" ></variable>
 
 
@@ -61,8 +61,8 @@
 <variable type="BOOLEAN" name="test2"  label="test2" component="checkbox"></variable>
 
 
-<variable type="BOOLEAN" name="test1"  label="test1" component="switch" disabled></variable>
-<variable type="BOOLEAN" name="test2"  label="test2" component="switch"></variable>
+<variable type="BOOLEAN" name="test1"  label="test1" component="switcher" disabled></variable>
+    <variable type="BOOLEAN" name="test2"  label="test2" component="switcher"></variable>
 
 
 <variable type="COLOR" name="test"  label="color1" ></variable>
@@ -95,12 +95,12 @@
 <variable width="300" height="300" type="INTEGER" name="test"  label="another"  component="gauge" min="-100" max="100"></variable>
 
 
-<variable type="INTEGER" name="test"  label="someList"  component="list" disabled>
+<variable type="INTEGER" name="test"  label="someList"  component="dropDownList" disabled>
     <option value="1"> test1</option>
     <option value="2"> test2</option>
     <option value="3"> test3</option>
 </variable>
-<variable type="INTEGER" name="test"  label="someList"  component="list">
+<variable type="INTEGER" name="test"  label="someList"  component="dropDownList">
     <option value="1"> test1</option>
     <option value="2"> test2</option>
     <option value="3"> test3</option>
@@ -117,7 +117,7 @@
     <option value="1"> test1</option>
     <option value="2"> test2</option>
     <option value="3"> test3</option>
-</variable>-->
+</variable>
 
 <script>
 	setup();
