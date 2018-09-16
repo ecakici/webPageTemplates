@@ -34,6 +34,9 @@ class ToSend {
 			case VariableOberverType.TEXT_2:
 				ret += getArray(this.values[0]).length + 1 + getArray(this.values[1]).length + 1;
 				break;
+			case VariableOberverType.SMALL_INTEGER_2_TEXT_2:
+				ret += 4+getArray(this.values[2]).length + 1 + getArray(this.values[3]).length + 1;
+				break;
 
 		}
 		return ret;
@@ -79,7 +82,13 @@ class ToSend {
 				remoteMeData.putString(this.values[1]);
 
 				break;
+			case VariableOberverType.SMALL_INTEGER_2_TEXT_2:
+				remoteMeData.putInt16(this.values[0]);
+				remoteMeData.putInt16(this.values[1]);
+				remoteMeData.putString(this.values[2]);
+				remoteMeData.putString(this.values[3]);
 
+				break;
 		}
 
 	}
@@ -126,6 +135,7 @@ class Variables {
 				var v1;
 				var v2;
 				var v3;
+				var v4
 				if (type == VariableOberverType.BOOLEAN) {
 					v1 = (remoteMeData.popByte() == 1);
 				} else if (type == VariableOberverType.INTEGER) {
@@ -147,13 +157,18 @@ class Variables {
 				} else if (type == VariableOberverType.TEXT_2) {
 					v1 = remoteMeData.popString();
 					v2 = remoteMeData.popString();
+				} else if (type == VariableOberverType.SMALL_INTEGER_2_TEXT_2) {
+					v1 = remoteMeData.popInt16();
+					v2 = remoteMeData.popInt16();
+					v3 = remoteMeData.popString();
+					v4 = remoteMeData.popString();
 				} else {
 					console.warn(" variable type didnt found if u think its bug contact me contact@remoteme.org");
 				}
 
 
 				for (var j = 0; j < toCalls.length; j++) {
-					toCalls[j](v1,v2,v3);
+					toCalls[j](v1,v2,v3,v4);
 				}
 
 			} else {
@@ -196,7 +211,9 @@ class Variables {
 	setText2(name, value, value2) {
 		this.set(name, VariableOberverType.TEXT_2, [value, value2]);
 	}
-
+	setSmallInteger2Text2(name, value, value2,value3,value4) {
+		this.set(name, VariableOberverType.SMALL_INTEGER_2_TEXT_2, [value, value2,value3,value4]);
+	}
 	set(name, type, values) {
 		var current = new ToSend();
 		current.name = name;
@@ -284,7 +301,9 @@ class Variables {
 	observeText2(name, onChange) {
 		this.observe(name, VariableOberverType.TEXT_2, onChange);
 	}
-
+	observeSmallInteger2Text2(name, onChange) {
+		this.observe(name, VariableOberverType.SMALL_INTEGER_2_TEXT_2, onChange);
+	}
 
 	observe(name, type, onChange) {
 
