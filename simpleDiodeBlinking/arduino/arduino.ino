@@ -6,6 +6,9 @@
 
 
 #include <RemoteMe.h>
+#include <RemoteMeConnector.h>
+//#include <RemoteMeSocketConnector.h>
+#include <RemoteMewebsocketConnector.h>
 
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
@@ -46,7 +49,7 @@ void setup() {
 		delay(100);
 	}
 	remoteMe.setUserMessageListener(onUserMessage);
-	remoteMe.setupTwoWayCommunication();
+	remoteMe.setConnector(new RemoteMewebsocketConnector());
 	remoteMe.sendRegisterDeviceMessage(DEVICE_NAME);
 	remoteMe.getVariables()->observeBoolean("button1", onButton1Change);
 	remoteMe.getVariables()->observeBoolean("button2", onButton2Change);

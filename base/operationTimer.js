@@ -26,13 +26,18 @@ class OperationTimer {
 
 	execute(fun, ...parameters) {
 		var operationId=fun.name;
+		this.executeWithId(operationId,fun,parameters);
+
+	}
+
+	executeWithId(id,fun, ...parameters) {
+		var operationId=id;
 		if (this.timers[operationId] == undefined) {//for first time we call it immidetly
 			fun.apply(undefined, parameters);
 			this._setTimeout(this, operationId);// we set timepout but nothing to execute
 		} else {
 			this.toExecute[operationId] = {'fun': fun,  'parameters': parameters};
 		}
-
 	}
 
 	_setTimeout(thiz, operationId) {

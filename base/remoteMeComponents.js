@@ -3,6 +3,136 @@ var id=0;
 var otChange= new OperationTimer(200);
 
 
+class Touch{
+
+	constructor(selector,xRange,yRange,onMove) {
+
+		this.onMoveReal=onMove;
+		this.xRange=xRange;
+		this.yRange=yRange;
+
+		this.steerParent=  $(`<div class="steerParent"></div>`);
+		this.pointer= $(`<div class="steer" ></div>`);
+		this.text= $(`<div class="text" ></div>`);
+		this.steerParent.append(this.pointer);
+		this.steerParent.append(this.text);
+
+		if ($(selector).attr( "style" )!=undefined){
+			this.steerParent.attr("style",$(selector).attr( "style" ));
+			$(selector).removeAttr( "style" );
+		}
+
+		selector.replaceWith(this.steerParent[0]);
+
+		this.steerParent.touchElement=this;
+
+		var onTouchStart=e=>{
+			var touch=e.data;
+			var touchEvent=touch.getTouchEvent(e);
+
+			var top=touchEvent.pageY-touch.steerParent.offset().top;
+			var left=touchEvent.pageX-touch.steerParent.offset().left;
+
+			console.info(top);
+
+			touch.deltaOffsetX=touchEvent.clientX;
+			touch.deltaOffsetY=touchEvent.clientY;
+
+
+			touch.steerParent.addClass('active');
+
+			touch.pointer.css('top',top-touch.pointer.height()/2+"px");
+			touch.pointer.css('left',left-touch.pointer.width()/2+"px");
+			touch.onMove(0,0);
+		};
+		var onTouchEnd=(e)=>{
+			var touch=e.data;
+
+			touch.steerParent.removeClass('active');
+
+			touch.steerParent.css('top','');
+			touch.steerParent.css('left','');
+			touch.pointer.css('background-color','');
+
+			touch.pointer.css('top',touch.steerParent.height()/2-touch.pointer.height()/2+"px");
+			touch.pointer.css('left',touch.steerParent.width()/2-touch.pointer.width()/2+"px");
+
+			touch.onMove(0,0);
+		};
+		var onTouchMove=e=>{
+			e.preventDefault();
+			var touch=e.data;
+
+			var touchEvent=touch.getTouchEvent(e);
+
+			var top=touchEvent.pageY-touch.steerParent.offset().top;
+			var left=touchEvent.pageX-touch.steerParent.offset().left;
+
+			touch.pointer.css('top',top-touch.pointer.height()/2+"px");
+			touch.pointer.css('left',left-touch.pointer.width()/2+"px");
+
+			var xposition=-(touch.deltaOffsetX-touchEvent.clientX)/(touch.steerParent.width()/2);
+			var yposition=(touch.deltaOffsetY-touchEvent.clientY)/(touch.steerParent.height()/2);
+
+			xposition=touch.range(xposition);
+			yposition=touch.range(yposition);
+
+			touch.onMove(xposition,yposition);
+
+
+		};
+
+
+		this.steerParent.on('touchstart',this,onTouchStart);
+
+		this.steerParent.on('touchend',this,onTouchEnd);
+		this.steerParent.on('touchmove',this,onTouchMove);
+
+
+	}
+
+	onMove(x,y){
+		x=Math.round(x*this.xRange);
+		y=Math.round(y*this.yRange);
+
+		if (x==0&& y==0){
+			this.text.text("");
+		}else{
+			this.text.text(x+" "+y);
+		}
+
+		if (this.onMoveReal!=undefined){
+			this.onMoveReal(x,y);
+		}
+	}
+	range(number){
+		if (number<-1){
+			return -1;
+		}else if (number>1){
+			return 1;
+		}else{
+			return number;
+		}
+	}
+	getTouchEvent(e){
+		if (e.changedTouches.length==1){
+			return e.changedTouches[0];
+		}
+		for(var i=0;i<e.changedTouches.length;i++){
+			if (e.changedTouches[i].target==this.steerParent[0]){
+				return e.changedTouches[i];
+			}
+		}
+	}
+
+	toFixes(i){
+		return (i>=0?' ':'')+(i/100.0).toFixed(2);
+	}
+
+	getCartesianDiff(p1,p2){
+		return Math.sqrt(Math.pow(p1.x-p2.x,2)+Math.pow(p1.y-p2.y,2))
+	}
+}
 
 function readProperties(selector){
 	var name = $(selector).attr("name");
@@ -53,7 +183,7 @@ function addButton(selector){
 		});
 	}
 
-	$(selector).append(element);
+	replaceComponent(selector,element);
 	componentHandler.upgradeElement(	element.get()[0]);
 }
 
@@ -105,7 +235,7 @@ function addColorChange(selector){
 		dialog.get()[0].close();
 	});
 
-	$(selector).append(dialog);
+
 	componentHandler.upgradeElement(	dialog.get()[0]);
 
 	if (! dialog.get()[0].showModal) {
@@ -139,8 +269,11 @@ function addColorChange(selector){
 
 
 
-	$(selector).append(button);
+	replaceComponent(selector,button);
 
+
+
+	$("body").append(dialog);
 	componentHandler.upgradeElement(	button.get()[0]);
 
 }
@@ -194,8 +327,9 @@ function addCheckBox(selector,switchMode=false){
 	});
 
 
+	replaceComponent(selector,checkBoxElement);
 
-	$(selector).append(checkBoxElement);
+
 	componentHandler.upgradeElement(checkBoxElement.get()[0]);
 }
 
@@ -221,7 +355,9 @@ function addSlider(selector,switchMode=false){
 	});
 
 
-	$(selector).append(slider);
+
+	replaceComponent(selector,slider);
+
 	componentHandler.upgradeElement(slider.get()[0]);
 }
 
@@ -265,8 +401,9 @@ function add3Sliders(selector){
 	});
 
 
-	$(selector).append(box);
 
+
+	replaceComponent(selector,box);
 
 
 	for(var i=0;i<3;i++){
@@ -312,7 +449,8 @@ function add2Sliders(selector){
 	});
 
 
-	$(selector).append(box);
+	replaceComponent(selector,box);
+
 
 	for(var i=0;i<2;i++){
 		componentHandler.upgradeElement(	sliders[i].get()[0]);
@@ -335,7 +473,8 @@ function addGauge(selector){
 	var canvas= $(`<canvas ></canvas>`);
 
 
-	$(selector).append(canvas);
+
+	replaceComponent(selector,canvas);
 
 	var gauge = new RadialGauge({
 		renderTo: canvas.get()[0],
@@ -416,8 +555,8 @@ function addList(selector,variableType){
 
 
 
+	replaceComponent(selector,element);
 
-	$(selector).append(element);
 	componentHandler.upgradeElement(element.get()[0]);
 
 
@@ -468,12 +607,22 @@ function addRadios(selector,variableType) {
 	});
 
 
-	$(selector).append(box);
 
+	replaceComponent(selector,box);
 
 }
 
+function replaceComponent(selector,element){
+	if ($(selector).attr( "style" )!=undefined){
+		$(element).attr("style",$(selector).attr( "style" ));
+	}
+	if ($(selector).attr( "class" )!=undefined){
+		$(element).addClass( $(selector).attr("class") );
+	}
 
+	$(selector).replaceWith(element);
+
+}
 function addTextField(selector,variableType) {
 
 
@@ -524,11 +673,39 @@ function addTextField(selector,variableType) {
 	});
 
 
-	$(selector).append(textField);
 
+	replaceComponent(selector,textField);
 
 }
 
+function addJoystick(selector){
+
+	var prop=readProperties(selector);
+
+
+
+	var xRange=100;
+	var yRange=100;
+	if ($(selector).attr( "xRange" )!=undefined){
+		xRange=$(selector).attr( "xRange" );
+	}
+
+
+	if ($(selector).attr( "yRange" )!=undefined){
+		yRange=$(selector).attr( "yRange" );
+	}
+
+	var touch=new Touch(selector,xRange,yRange,(x,y)=>{
+		console.info(x+" "+y);
+		otChange.executeWithId(prop.name+"SmallInteger2",()=>{
+			remoteme.getVariables().setSmallInteger2(prop.name,x,y);
+		});
+
+	});
+
+
+
+}
 
 
 function replace(){
@@ -576,6 +753,10 @@ function replace(){
 
 		else if ($(variable).attr( "type" ) =="SMALL_INTEGER_3" && $(variable).attr( "component" ) =="color"){
 			addColorChange(variable);
+		}
+
+		else if ($(variable).attr( "type" ) =="SMALL_INTEGER_2" && $(variable).attr( "component" ) =="joystick"){
+			addJoystick(variable);
 		}
 	}
 }
