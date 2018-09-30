@@ -1,21 +1,8 @@
 {
-	'use strict';
-	(function () {
-		function whenLoaded() {
-			getmdlSelect.init('.getmdl-select');
-		};
 
-		window.addEventListener ?
-			window.addEventListener("load", whenLoaded, false) :
-			window.attachEvent && window.attachEvent("onload", whenLoaded);
-
-	}());
 
 	var getmdlSelect = {
 		_addEventListeners: function (dropdown) {
-
-
-
 
 			var input = dropdown.querySelector('input');
 			var hiddenInput = dropdown.querySelector('input[type="hidden"]');
@@ -115,6 +102,7 @@
 
 				//hide all old opened selects and opening just clicked select
 				input.onclick = function (e) {
+
 					e.stopPropagation();
 					if (!menu.classList.contains('is-visible')) {
 						menu['MaterialMenu'].show();
@@ -210,13 +198,12 @@
 
 
 		},
-		init: function (selector) {
-			var dropdowns = document.querySelectorAll(selector);
-			[].forEach.call(dropdowns, function (dropdown) {
+		init: function (dropdown) {
+
 				getmdlSelect._addEventListeners(dropdown);
 				componentHandler.upgradeElement(dropdown);
 				componentHandler.upgradeElement(dropdown.querySelector('ul'));
-			});
+
 		}
 	};
 }

@@ -1,0 +1,166 @@
+[
+    {
+      "name": "button",
+      "types": [
+        {
+          "name": "BOOLEAN",
+          "description": "Button to send true| false to de "
+        }
+      ],
+      "fields": [
+        {
+          "name": "name",
+          "type": "string",
+          "description": "variable name"
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "description": "variable name"
+        }
+      ],
+      "canbedisabled":"true"
+    },
+    {
+      "name": "checkbox",
+      "types": [
+        {
+          "name": "BOOLEAN",
+          "description": "Button to send true| false to de "
+        }
+      ],
+      "fields": [
+        {
+          "name": "name",
+          "type": "string",
+          "hint": "variable name"
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "hint": "variable name"
+        }
+      ],
+      "canbedisabled":"true"
+    },
+    {
+      "name": "switcher",
+      "types": [
+        {
+          "name": "BOOLEAN",
+          "description": "Button to send true| false to de "
+        }
+      ],
+      "fields": [
+        {
+          "name": "name",
+          "type": "string",
+          "hint": "variable name"
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "hint": "variable name"
+        }
+      ],
+      "canbedisabled":"true"
+    }, {
+      "name": "slider",
+      "types": [
+        {
+          "name": "INTEGER",
+          "description": "Button to send true| false to de "
+        },
+        {
+          "name": "SMALL_INTEGER_2",
+          "description": "Button to send true| false to de "
+        },
+        {
+          "name": "SMALL_INTEGER_3",
+          "description": "Button to send true| false to de "
+        }
+      ],
+      "fields": [
+        {
+          "name": "name",
+          "type": "string",
+          "hint": "variable name"
+        },
+        {
+          "name": "min",
+          "type": "integer",
+          "hint": "variable name",
+          "default":-100
+        },
+        {
+          "name": "max",
+          "type": "integer",
+          "hint": "variable name",
+          "default":100
+        }
+      ],
+      "canbedisabled":"true"
+    }
+  , {
+      "name": "dropDownList",
+      "types": [
+        {
+          "name": "TEXT",
+          "description": "Button to send true| false to de ",
+          "childs":[
+            {
+              "description": "Options",
+              "type":"option",
+              "fields":[{
+                "name":"value",
+                "type":"string",
+                "hint": "value of option"
+              },{
+                "name":"body",
+                "type":"string",
+                "hint": "display"
+              }]
+            }
+          ]
+        },
+        {
+          "name": "INTEGER",
+          "description": "Button to send true| false to de ",
+          "childs":[
+            {
+              "description": "Options",
+              "type":"option",
+              "fields":[{
+                "name":"value",
+                "type":"integer",
+                "hint": "value of option"
+              },{
+                "name":"body",
+                "type":"string",
+                "hint": "display"
+              }]
+            }
+          ]
+        },
+        {
+          "name": "DOUBLE",
+          "description": "Button to send true| false to de "
+        }
+      ],
+      "fields": [
+        {
+          "name": "name",
+          "type": "string",
+          "hint": "variable name"
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "hint": "variable name"
+        }
+      ],
+      "canbedisabled":"true"
+    }
+
+
+  ]

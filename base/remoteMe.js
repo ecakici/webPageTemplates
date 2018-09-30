@@ -12,6 +12,11 @@ WebsocketConnectingStatusEnum = {
 	ERROR: 2,
 };
 
+class RemoteMeFake {
+
+
+
+}
 
 class RemoteMe {
 

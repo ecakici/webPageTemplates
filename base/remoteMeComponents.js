@@ -10,6 +10,7 @@ class Touch{
 		this.onMoveReal=onMove;
 		this.xRange=xRange;
 		this.yRange=yRange;
+		this.move=false;
 
 		this.steerParent=  $(`<div class="steerParent"></div>`);
 		this.pointer= $(`<div class="steer" ></div>`);
@@ -28,12 +29,12 @@ class Touch{
 
 		var onTouchStart=e=>{
 			var touch=e.data;
+			touch.move=true;
 			var touchEvent=touch.getTouchEvent(e);
 
 			var top=touchEvent.pageY-touch.steerParent.offset().top;
 			var left=touchEvent.pageX-touch.steerParent.offset().left;
 
-			console.info(top);
 
 			touch.deltaOffsetX=touchEvent.clientX;
 			touch.deltaOffsetY=touchEvent.clientY;
@@ -45,8 +46,12 @@ class Touch{
 			touch.pointer.css('left',left-touch.pointer.width()/2+"px");
 			touch.onMove(0,0);
 		};
+
+
+
 		var onTouchEnd=(e)=>{
 			var touch=e.data;
+			touch.move=false;
 
 			touch.steerParent.removeClass('active');
 
@@ -63,30 +68,36 @@ class Touch{
 			e.preventDefault();
 			var touch=e.data;
 
-			var touchEvent=touch.getTouchEvent(e);
+			if (touch.move){
+				var touchEvent=touch.getTouchEvent(e);
 
-			var top=touchEvent.pageY-touch.steerParent.offset().top;
-			var left=touchEvent.pageX-touch.steerParent.offset().left;
+				var top=touchEvent.pageY-touch.steerParent.offset().top;
+				var left=touchEvent.pageX-touch.steerParent.offset().left;
 
-			touch.pointer.css('top',top-touch.pointer.height()/2+"px");
-			touch.pointer.css('left',left-touch.pointer.width()/2+"px");
+				touch.pointer.css('top',top-touch.pointer.height()/2+"px");
+				touch.pointer.css('left',left-touch.pointer.width()/2+"px");
 
-			var xposition=-(touch.deltaOffsetX-touchEvent.clientX)/(touch.steerParent.width()/2);
-			var yposition=(touch.deltaOffsetY-touchEvent.clientY)/(touch.steerParent.height()/2);
+				var xposition=-(touch.deltaOffsetX-touchEvent.clientX)/(touch.steerParent.width()/2);
+				var yposition=(touch.deltaOffsetY-touchEvent.clientY)/(touch.steerParent.height()/2);
 
-			xposition=touch.range(xposition);
-			yposition=touch.range(yposition);
+				xposition=touch.range(xposition);
+				yposition=touch.range(yposition);
 
-			touch.onMove(xposition,yposition);
+				touch.onMove(xposition,yposition);
+			}
 
 
 		};
 
 
 		this.steerParent.on('touchstart',this,onTouchStart);
+		this.steerParent.on('mousedown',this,onTouchStart);
 
 		this.steerParent.on('touchend',this,onTouchEnd);
+		this.steerParent.on('mouseup',this,onTouchEnd);
+
 		this.steerParent.on('touchmove',this,onTouchMove);
+		this.steerParent.on('mousemove',this,onTouchMove);
 
 
 	}
@@ -115,6 +126,9 @@ class Touch{
 		}
 	}
 	getTouchEvent(e){
+		if (e.changedTouches==undefined){//probably mouses
+			return e;
+		}
 		if (e.changedTouches.length==1){
 			return e.changedTouches[0];
 		}
@@ -329,8 +343,7 @@ function addCheckBox(selector,switchMode=false){
 
 	replaceComponent(selector,checkBoxElement);
 
-
-	componentHandler.upgradeElement(checkBoxElement.get()[0]);
+	componentHandler.upgradeElement(checkBoxElement[0]);
 }
 
 
@@ -557,8 +570,7 @@ function addList(selector,variableType){
 
 	replaceComponent(selector,element);
 
-	componentHandler.upgradeElement(element.get()[0]);
-
+	getmdlSelect.init(element[0]);
 
 }
 
@@ -621,6 +633,8 @@ function replaceComponent(selector,element){
 	}
 
 	$(selector).replaceWith(element);
+
+
 
 }
 function addTextField(selector,variableType) {
@@ -718,15 +732,19 @@ function replace(){
 			addCheckBox(variable);
 		}else if ($(variable).attr( "type" ) =="BOOLEAN" && $(variable).attr( "component" ) =="switcher"){
 			addCheckBox(variable,true);
-		}else if ($(variable).attr( "type" ) =="INTEGER" && $(variable).attr( "component" ) =="slider"){
+		}
+		else if ($(variable).attr( "type" ) =="INTEGER" && $(variable).attr( "component" ) =="slider"){
 			addSlider(variable);
-		}else if ($(variable).attr( "type" ) =="INTEGER" && $(variable).attr( "component" ) =="gauge"){
-			addGauge(variable);
 		}else if ($(variable).attr( "type" ) =="SMALL_INTEGER_3" && $(variable).attr( "component" ) =="slider"){
 			add3Sliders(variable);
 		}else if ($(variable).attr( "type" ) =="SMALL_INTEGER_2" && $(variable).attr( "component" ) =="slider"){
 			add2Sliders(variable);
-		}else if ($(variable).attr( "type" ) =="INTEGER" && $(variable).attr( "component" ) =="dropDownList"){
+		}
+		else if ($(variable).attr( "type" ) =="INTEGER" && $(variable).attr( "component" ) =="gauge"){
+			addGauge(variable);
+		}
+
+		else if ($(variable).attr( "type" ) =="INTEGER" && $(variable).attr( "component" ) =="dropDownList"){
 			addList(variable,VariableOberverType.INTEGER);
 		}else if ($(variable).attr( "type" ) =="TEXT" && $(variable).attr( "component" ) =="dropDownList"){
 			addList(variable,VariableOberverType.TEXT);
@@ -766,5 +784,15 @@ $( document ).ready(function() {
 		remoteme = new RemoteMe();
 	}
 	replace();
+	if (doNotCreateRemoteMe==true){
+		remoteme.sendDirectWebsocket=()=>{};
+		remoteme.sendRest=()=>{};
+		remoteme.sendWebSocketText=()=>{};
+		remoteme.sendWebRtc=()=>{};
+		remoteme.sendWebSocket=()=>{};
+
+
+	}
+
 });
 
