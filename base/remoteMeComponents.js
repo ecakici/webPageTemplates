@@ -367,9 +367,10 @@ function addSlider(selector,switchMode=false){
 
 	});
 
+	var box= $(`<div><p>${prop.label}</p></div>`);
+	box.append(slider);
 
-
-	replaceComponent(selector,slider);
+	replaceComponent(selector,box);
 
 	componentHandler.upgradeElement(slider.get()[0]);
 }
@@ -381,7 +382,7 @@ function add3Sliders(selector){
 
 	var prop = readProperties(selector);
 
-	var box= $(`<div class="box"></div>`);
+	var box= $(`<div class="box"><p>${prop.label}</p></div>`);
 	var sliders=[];
 
 
@@ -466,7 +467,7 @@ function add2Sliders(selector){
 
 
 	for(var i=0;i<2;i++){
-		componentHandler.upgradeElement(	sliders[i].get()[0]);
+		componentHandler.upgradeElement(sliders[i].get()[0]);
 
 	}
 }
