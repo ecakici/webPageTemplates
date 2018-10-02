@@ -14,9 +14,6 @@
 			var previousDataVal = '';
 			var opened = false;
 
-
-
-
 			dropdown.set=function (val) {
 				list.forEach(function (li) {
 					if (li.dataset.val==val){
