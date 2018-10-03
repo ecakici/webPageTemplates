@@ -798,7 +798,7 @@ $( document ).ready(function() {
 		remoteme = new RemoteMe();
 	}
 	replace();
-	if (doNotCreateRemoteMe==true){
+	if (doNotCreateRemoteMe!=undefined && doNotCreateRemoteMe==true){
 		remoteme.sendDirectWebsocket=()=>{};
 		remoteme.sendRest=()=>{};
 		remoteme.sendWebSocketText=()=>{};
