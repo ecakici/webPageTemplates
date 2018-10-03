@@ -165,10 +165,10 @@ function readProperties(selector){
 	var min=0;
 	var max=100;
 	if ($(selector).attr( "min" )!=undefined){
-		min=$(selector).attr( "min" );
+		min=parseInt($(selector).attr( "min" ));
 	}
 	if ($(selector).attr( "max" )!=undefined){
-		max=$(selector).attr( "max" );
+		max=parseInt($(selector).attr( "max" ));
 	}
 	var disabled=false;
 	disabled =$(selector).attr( "disabled" )!=undefined;
@@ -476,38 +476,51 @@ function add2Sliders(selector){
 function addGauge(selector){
 
 
-
-
 	var prop = readProperties(selector);
 
 
-	height=$(selector).attr( "height" );
-	width=$(selector).attr( "width" );
+	var widthheight=$(selector).attr( "widthheight" );
+
+	var borders=$(selector).attr( "borders" )=="true";
+	var valueBox=$(selector).attr( "valueBox" )=="true";
+
+	var majorTick=parseInt($(selector).attr( "tickDelta" ));
+	var minorTick=parseInt($(selector).attr( "minorTick" ));
+
+	var ticks=[];
+
+	if (majorTick>0){
+		for(var val=prop.min;val<=prop.max;val+=majorTick){
+			ticks.push(val);
+		}
+	}
+
+
+	widthheight=widthheight+"px";
 
 	var canvas= $(`<canvas ></canvas>`);
-
-
 
 	replaceComponent(selector,canvas);
 
 	var gauge = new RadialGauge({
 		renderTo: canvas.get()[0],
-		width: 300,
-		height: 300,
+		width: widthheight,
+		height: widthheight,
 		units: label,
 		minValue: prop.min,
 		maxValue: prop.max,
-		//majorTicks: ticks,
-		minorTicks: 2,
+		majorTicks:  ticks,
+		minorTicks: minorTick,
 		strokeTicks: true,
 		highlights: [
 
 		],
 		colorPlate: "#fff",
 		borderShadowWidth: 0,
-		borders: false,
+		borders: borders,
 		needleType: "arrow",
 		needleWidth: 2,
+		valueBox: valueBox,
 		needleCircleSize: 7,
 		needleCircleOuter: true,
 		needleCircleInner: false,
@@ -521,7 +534,7 @@ function addGauge(selector){
 		gauge.value=x;
 
 	});
-	$(canvas).css("width:100%;height:inherit,font-size:10px")
+	$(canvas).css(`width:${widthheight};height:${widthheight},font-size:10px`)
 
 }
 function addList(selector,variableType){
