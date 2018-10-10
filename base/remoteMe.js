@@ -869,11 +869,6 @@ class RemoteMe {
 			}
 			console.error("Cannot connect local webserver, check if tis enabled at Your arduino")
 		});
-
-
-
-
-
 	}
 
 
