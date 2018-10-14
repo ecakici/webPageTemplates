@@ -143,3 +143,120 @@
     background-color: rgba(255, 2, 0, 0.64);
 
 }
+
+.statusIcons{
+    position:absolute;
+    top:0px;
+    right:0px;
+    padding:5px;
+}
+
+.statusIcons div {
+   padding-right:5px;
+   display:inline;
+}
+
+.statusIcons div.connecting{
+    color: #00e4ff;
+}
+.statusIcons div.connected{
+    color: #00c900;
+}
+
+.statusIcons div.disconnected{
+    color: #c4b996;
+}
+
+.statusIcons div.failed{
+    color: #c40b00;
+}
+
+.statusIcons div.checking{
+    color: #000cc4;
+}
+ .statusIcons div.disconnecting{
+     color: #5c5c5c;
+ }
+
+.statusIcons div i{
+  cursor: pointer;
+}
+@-webkit-keyframes pulseMore {
+    from {
+        -webkit-transform: scale3d(1, 1, 1);
+        transform: scale3d(1, 1, 1);
+    }
+
+    50% {
+        -webkit-transform: scale3d(1.25, 1.25, 1.25);
+        transform: scale3d(1.25, 1.25, 1.25);
+    }
+
+    to {
+        -webkit-transform: scale3d(1, 1, 1);
+        transform: scale3d(1, 1, 1);
+    }
+}
+
+@keyframes pulseMore {
+    from {
+        -webkit-transform: scale3d(1, 1, 1);
+        transform: scale3d(1, 1, 1);
+    }
+
+    50% {
+        -webkit-transform: scale3d(1.25, 1.25, 1.25);
+        transform: scale3d(1.25, 1.25, 1.25);
+    }
+
+    to {
+        -webkit-transform: scale3d(1, 1, 1);
+        transform: scale3d(1, 1, 1);
+    }
+}
+
+.pulseMore {
+    -webkit-animation-name: pulseMore;
+    animation-name: pulseMore;
+}
+@keyframes rubberBandMore {
+    from {
+        -webkit-transform: scale3d(1, 1, 1);
+        transform: scale3d(1, 1, 1);
+    }
+
+    30% {
+        -webkit-transform: scale3d(1.35, 0.65, 1);
+        transform: scale3d(1.35, 0.65, 1);
+    }
+
+    40% {
+        -webkit-transform: scale3d(0.65, 1.35, 1);
+        transform: scale3d(0.65, 1.35, 1);
+    }
+
+    50% {
+        -webkit-transform: scale3d(1.25, 0.75, 1);
+        transform: scale3d(1.15, 0.75, 1);
+    }
+
+    65% {
+        -webkit-transform: scale3d(0.85, 1.15, 1);
+        transform: scale3d(0.85, 1.15, 1);
+    }
+
+    75% {
+        -webkit-transform: scale3d(1.05, 0.95, 1);
+        transform: scale3d(1.05, 0.95, 1);
+    }
+
+    to {
+        -webkit-transform: scale3d(1, 1, 1);
+        transform: scale3d(1, 1, 1);
+    }
+}
+
+.rubberBandMore {
+    -webkit-animation-name: rubberBandMore;
+    animation-name: rubberBandMore;
+}

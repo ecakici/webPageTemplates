@@ -116,12 +116,28 @@ class Variables {
 		this.toSend = [];
 	}
 
-
-	_onObserverPropagateMesage(remoteMeData) {
+	_onObserverChangeMessage(remoteMeData){
 		remoteMeData.popInt16();//size
-
 		var senderDeviceId = remoteMeData.popInt16();
-		var targetDeviceId = remoteMeData.popInt16();
+		var targetDeviceId= thisDeviceId;
+
+		var ignoreCount= remoteMeData.popInt8();
+		while(ignoreCount!=0){
+			ignoreCount--;
+			remoteMeData.popInt16();
+		}
+
+		this._onObserverPropagateMessageP(senderDeviceId,targetDeviceId,remoteMeData);
+	}
+
+	_onObserverPropagateMessage(remoteMeData){
+		remoteMeData.popInt16();//size
+		var senderDeviceId = remoteMeData.popInt16();
+		var targetDeviceId= remoteMeData.popInt16();
+		this._onObserverPropagateMessageP(senderDeviceId,targetDeviceId,remoteMeData);
+	}
+
+	_onObserverPropagateMessageP(senderDeviceId,targetDeviceId,remoteMeData) {
 
 		var dataSize = remoteMeData.popInt16();
 
@@ -135,7 +151,7 @@ class Variables {
 				var v1;
 				var v2;
 				var v3;
-				var v4
+				var v4;
 				if (type == VariableOberverType.BOOLEAN) {
 					v1 = (remoteMeData.popByte() == 1);
 				} else if (type == VariableOberverType.INTEGER) {
@@ -228,7 +244,9 @@ class Variables {
 	}
 
 	_sendNow() {
-		var ignoreDeviceId = [];
+
+
+		var ignoreDeviceId = this.remoteMe.getDirectConnected();
 
 		var size = 2 + 2 + 1 + ignoreDeviceId.length * 2;
 
@@ -245,15 +263,22 @@ class Variables {
 			ret.putShort(current);
 		}
 
+		var variables=[];
+		this.toSend.forEach(x=>{
+			var temp={};
+			temp.name=x.name;
+			temp.type=x.type;
+			variables.push(temp);
+		});
+
 		ret.putShort(this.toSend.length);
 
 		for (var current of this.toSend) {
 			current.serialize(ret);
 		}
 
-		for (var receiveDeviceId of Object.keys(this.remoteMe.directWebSocket)) {
-			this.remoteMe.sendDirectWebsocket(receiveDeviceId, ret);
-		}
+		this.remoteMe.sendVariablesChangeDirect(variables, ret);
+
 		if (this.remoteMe.isWebRTCConnected()) {
 			this.remoteMe.sendWebRtc(ret);
 		}

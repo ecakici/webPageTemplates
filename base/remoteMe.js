@@ -1,4 +1,4 @@
-WebrtcConnectingStatusEnum = {
+ConnectingStatusEnum = {
 	CONNECTED: 0,
 	DISCONNECTED: 1,
 	FAILED: 2,
@@ -6,17 +6,8 @@ WebrtcConnectingStatusEnum = {
 	DISCONNECTING: 4,
 	CHECKING: 5
 };
-WebsocketConnectingStatusEnum = {
-	CONNECTED: 0,
-	DISCONNECTED: 1,
-	ERROR: 2,
-};
-
-class RemoteMeFake {
 
 
-
-}
 
 class RemoteMe {
 
@@ -32,8 +23,9 @@ class RemoteMe {
 		var remoteMeDefaultConfig = {
 			automaticlyConnectWS: true,
 			automaticlyConnectWebRTC: false,
-			webSocketConnectionChange: undefined,
-			webRtcConnectionChange: undefined,
+			webSocketConnectionChange: [],
+			directConnectionChange: [],
+			webRtcConnectionChange: [],
 			onUserMessage: undefined,
 			onUserSyncMessage: undefined,
 			pcConfig: {"iceServers": [{"urls": "stun:stun.l.google.com:19302"}]},
@@ -66,6 +58,7 @@ class RemoteMe {
 
 		window.onbeforeunload = function (event) {
 			this.disconnectWebSocket();
+			this.disconnectDirectConnections();
 			this.disconnectWebRTC();
 
 
@@ -111,14 +104,36 @@ class RemoteMe {
 
 
 	connectWebSocket() {
-
+		this.onWebSocketConnectionChange(ConnectingStatusEnum.CONNECTING);
 		this.log("connectiong WS");
 		this.webSocket = new WebSocket(RemoteMe.thiz.getWSUrl());
 		this.webSocket.binaryType = "arraybuffer";
-		this.webSocket.onopen = this.onOpenWS.bind(this);
+		this.webSocket.onopen = ((event)=>{
+			if (this.remoteMeConfig.automaticlyConnectWebRTC) {
+				setTimeout(function () {
+					this.connectWebRTC();
+				}.bind(this), 1000);
+			}
+			this.onWebSocketConnectionChange(ConnectingStatusEnum.CONNECTED);
+			if (this.pingWebSocketTimer !== undefined) {
+				window.clearTimeout(this.pingWebSocketTimer);
+			}
+			this.pingWebSocketTimer = setInterval((function () {
+				var ret = new RemoteMeData(4);
+				ret.putShort(0);
+				ret.putShort(0);
+				this.sendWebSocket(ret.getBufferArray());
+			}).bind(this),60000);
+		});
+
+		this.webSocket.onerror = (event)=>this.onWebSocketConnectionChange(ConnectingStatusEnum.FAILED);
+		this.webSocket.onclose = ((event)=>{
+			window.clearTimeout(this.pingWebSocketTimer);
+			this.pingWebSocketTimer = undefined;
+			this.onWebSocketConnectionChange(ConnectingStatusEnum.DISCONNECTED);
+		});
+
 		this.webSocket.onmessage = this.onMessageWS.bind(this);
-		this.webSocket.onerror = this.onErrorWS.bind(this);
-		this.webSocket.onclose = this.onCloseWS.bind(this);
 
 	}
 
@@ -127,6 +142,15 @@ class RemoteMe {
 		if (this.isWebSocketConnected()) {
 			this.disconnectWebSocket();
 			setTimeout(this.connectWebSocket.bind(this), 1000);
+		} else {
+			this.connectWebSocket();
+		}
+
+	}
+
+	onOffWebSocket() {
+		if (this.isWebSocketConnected()) {
+			this.disconnectWebSocket();
 		} else {
 			this.connectWebSocket();
 		}
@@ -230,46 +254,11 @@ class RemoteMe {
 
 	}
 
-	onErrorWS(event) {
-		this.log("on error");
-		if (this.remoteMeConfig.webSocketConnectionChange) {
-			this.remoteMeConfig.webSocketConnectionChange(WebsocketConnectingStatusEnum.ERROR);
-		}
-
-	};
 
 
-	onCloseWS(event) {
-		window.clearTimeout(this.pingWebSocketTimer);
-		this.pingWebSocketTimer = undefined;
-		if (this.remoteMeConfig.webSocketConnectionChange) {
-			this.remoteMeConfig.webSocketConnectionChange(WebsocketConnectingStatusEnum.DISCONNECTED);
-		}
 
 
-	};
 
-
-	onOpenWS(event) {
-		if (this.remoteMeConfig.automaticlyConnectWebRTC) {
-			setTimeout(function () {
-				this.connectWebRTC();
-			}.bind(this), 1000);
-		}
-		if (this.remoteMeConfig.webSocketConnectionChange) {
-			this.remoteMeConfig.webSocketConnectionChange(WebsocketConnectingStatusEnum.CONNECTED);
-		}
-		if (this.pingWebSocketTimer != undefined) {
-			window.clearTimeout(this.pingWebSocketTimer);
-		}
-		this.pingWebSocketTimer = setInterval(function () {
-			var ret = new RemoteMeData(4);
-			ret.putShort(0);
-			ret.putShort(0)
-			RemoteMe.thiz.sendWebSocket(ret.getBufferArray());
-		},60000)
-
-	};
 
 
 	onMessageWS(event) {
@@ -362,7 +351,10 @@ class RemoteMe {
 
 
 		}else if (ret.typeId == MessageType.VARIABLE_CHANGE_PROPAGATE_MESSAGE) {
-			this.getVariables()._onObserverPropagateMesage(data);
+			this.getVariables()._onObserverPropagateMessage(data);
+
+		}else if (ret.typeId == MessageType.VARIABLE_CHANGE_MESSAGE) {
+			this.getVariables()._onObserverChangeMessage(data);
 
 		}else if (ret.typeId==0) {
 			//ping
@@ -392,15 +384,13 @@ class RemoteMe {
 		this.connectWebRTC();
 	}
 
-	onWebrtcChange(status) {
-		if (raspberryPiDeviceId!=undefined) {
-			if (this.remoteMeConfig.webRTCConnectionChange) {
-				this.remoteMeConfig.webRTCConnectionChange(status);
-			}
-			this.sendWebRTCConnectionStatusChangeMessage(thisDeviceId, raspberryPiDeviceId, status);
+	onOffWebRTC() {
+		if (this.isWebRTCConnected()){
+			this.disconnectWebRTC();
+		}else{
+			this.connectWebRTC();
 		}
 	}
-
 
 	connectWebRTC() {
 		if (!this.isWebSocketConnected()) {
@@ -408,7 +398,7 @@ class RemoteMe {
 			return;
 		}
 
-		this.onWebrtcChange(WebrtcConnectingStatusEnum.CONNECTING);
+		this.onWebRtcConnectionChange(ConnectingStatusEnum.CONNECTING);
 
 		// No Room concept, random generate room and client id.
 		var register = {
@@ -445,7 +435,7 @@ class RemoteMe {
 		}
 
 
-		this.onWebrtcChange(WebrtcConnectingStatusEnum.DISCONNECTING);
+		this.onWebRtcConnectionChange(ConnectingStatusEnum.DISCONNECTING);
 
 		var message = {
 			cmd: "disconnect",
@@ -477,13 +467,13 @@ class RemoteMe {
 		this.peerConnection = new RTCPeerConnection(this.remoteMeConfig.pcConfig, this.remoteMeConfig.pcOptions);
 		this.peerConnection.oniceconnectionstatechange = function () {
 			if (RemoteMe.thiz.peerConnection.iceConnectionState == 'disconnected') {
-				RemoteMe.thiz.onWebrtcChange(WebrtcConnectingStatusEnum.DISCONNECTED);
+				RemoteMe.thiz.onWebRtcConnectionChange(ConnectingStatusEnum.DISCONNECTED);
 			} else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'failed') {
-				RemoteMe.thiz.onWebrtcChange(WebrtcConnectingStatusEnum.FAILED);
+				RemoteMe.thiz.onWebRtcConnectionChange(ConnectingStatusEnum.FAILED);
 			} else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'connected') {
-				RemoteMe.thiz.onWebrtcChange(WebrtcConnectingStatusEnum.CONNECTED);
+				RemoteMe.thiz.onWebRtcConnectionChange(ConnectingStatusEnum.CONNECTED);
 			} else if (RemoteMe.thiz.peerConnection.iceConnectionState == 'checking') {
-				RemoteMe.thiz.onWebrtcChange(WebrtcConnectingStatusEnum.CHECKING);
+				RemoteMe.thiz.onWebRtcConnectionChange(ConnectingStatusEnum.CHECKING);
 			}
 
 			RemoteMe.thiz.log("webrtc connection status changed" + RemoteMe.thiz.peerConnection.iceConnectionState)
@@ -812,15 +802,7 @@ class RemoteMe {
 		sendDirectWebsocket(receiveDeviceId,toSend);
 
 	}
-	sendDirectWebsocket(receiveDeviceId, toSend) {
-		if (this.isDirectWebSocketConnectionConnected(receiveDeviceId)) {
-			this.directWebSocket[receiveDeviceId].send(toSend);
-			return true;
-		} else {
-			this.log("Directwebsocket is not opened");
-			return false;
-		}
-	}
+
 	sendUserMessageWebrtc(receiveDeviceId, data) {
 		this.sendWebRtc(getUserMessage(WSUserMessageSettings.NO_RENEWAL, receiveDeviceId, thisDeviceId, 0, data));
 	}
@@ -838,6 +820,71 @@ class RemoteMe {
 
 	//------------------------ direct websocket
 
+	hasCommon(array1,array2){
+		var compareObjects = function(o1, o2){
+			for(var p in o1){
+				if(o1.hasOwnProperty(p)){
+					if(o1[p] !== o2[p]){
+						return false;
+					}
+				}
+			}
+			for(var p in o2){
+				if(o2.hasOwnProperty(p)){
+					if(o1[p] !== o2[p]){
+						return false;
+					}
+				}
+			}
+			return true;
+		};
+
+		for(var i=0;i<array1.length;i++){
+			for(var j=0;j<array2.length;j++){
+				if (array1[i]==array2[j]){
+					return true;
+				}else if (compareObjects(array1[i],array2[j])){
+					return true;
+				}
+
+			}
+		}
+		return false;
+
+	}
+
+
+
+
+	sendVariablesChangeDirect(variables,payload){
+
+		this.directWebSocket.forEach(webSocket=> {
+			var contains=0;
+
+			if (this.hasCommon(variables,webSocket.variables)){
+				this.sendDirectWebsocket(webSocket.deviceId,payload);
+			}
+
+
+		});
+
+
+	}
+
+	sendDirectWebsocket(receiveDeviceId, toSend) {
+		if (this.isDirectWebSocketConnectionConnected(receiveDeviceId)) {
+			if (  toSend instanceof RemoteMeData){
+				toSend=toSend.getBufferArray();
+			}
+			this.directWebSocket[receiveDeviceId].send(toSend);
+			console.info(`send to deivcei id ${receiveDeviceId}`);
+			return true;
+		} else {
+			this.log("Directwebsocket is not opened");
+			return false;
+		}
+	}
+
 	isDirectWebSocketConnectionConnected(deviceId){
 		return this.directWebSocket[deviceId] != undefined && this.directWebSocket[deviceId].readyState === this.directWebSocket[deviceId].OPEN;
 	}
@@ -848,30 +895,111 @@ class RemoteMe {
 		this.directWebSocket[deviceId] = undefined;
 	}
 
-	directWebSocketConnectionConnect(deviceId,webSocketLocalConnectionChange){
-		if (location.protocol != 'http:')
-		{
-			location.href = 'http:' + window.location.href.substring(window.location.protocol.length);
-		}
+	disconnectDirectConnections(){
+		this.directWebSocket.forEach(x=>{
+			this.onDirectConnectionChange(x.deviceId, ConnectingStatusEnum.DISCONNECTING);
+			x.close()
+		});
+		this.directWebSocket=[];
+	}
 
-		RemoteMeRest_getLocalWebSocketServer(deviceId,data=>{
-			this.directWebSocket[deviceId] = new WebSocket(`ws://${data.localIP}:${data.port}`);
-			this.directWebSocket[deviceId].binaryType = "arraybuffer";
-			this.directWebSocket[deviceId].onmessage = this.onMessageWS.bind(this);
-			if (webSocketLocalConnectionChange!=undefined){
-				this.directWebSocket[deviceId].onopen = ()=>webSocketLocalConnectionChange(deviceId,WebsocketConnectingStatusEnum.CONNECTED);
-				this.directWebSocket[deviceId].onerror = ()=>webSocketLocalConnectionChange(deviceId,WebsocketConnectingStatusEnum.ERROR);
-				this.directWebSocket[deviceId].onclose = ()=>webSocketLocalConnectionChange(deviceId,WebsocketConnectingStatusEnum.DISCONNECTED);
-			}
+	onOffDirectConnection(){
+		if (this.directWebSocket.length==0){
+			this.directWebSocketConnectionConnect();
+
+		}else{
+			this.disconnectDirectConnections();
+		}
+	}
+
+	directWebSocketConnectionConnect(){
+
+
+		RemoteMeRest_getLocalWebSocketServers(data=>{
+			console.info(data);
+			//console.info(this);
+			data.forEach(device=>{
+				this.onDirectConnectionChange(device.deviceId,ConnectingStatusEnum.CONNECTING);
+				this.directWebSocket[device.deviceId] = new WebSocket(`ws://${device.localIP}:${device.port}`);
+				this.directWebSocket[device.deviceId].binaryType = "arraybuffer";
+				this.directWebSocket[device.deviceId].onmessage =  (event)=>{
+					console.info(`direct message got`);
+					this.onMessageWS(event);
+				};
+				this.directWebSocket[device.deviceId].variables=device.variables;
+				this.directWebSocket[device.deviceId].deviceId=device.deviceId;
+
+				this.directWebSocket[device.deviceId].onopen = (event)=>this.onOpenDirectConnection(device.deviceId,event);
+				this.directWebSocket[device.deviceId].onerror = (event)=>this.onDirectConnectionChange(device.deviceId, ConnectingStatusEnum.FAILED);
+				this.directWebSocket[device.deviceId].onclose = (event)=>this.onDirectConnectionChange(device.deviceId, ConnectingStatusEnum.DISCONNECTED);
+			});
+
+
 		},error=>{
-			if (webSocketLocalConnectionChange!=undefined) {
-				webSocketLocalConnectionChange(deviceId, WebsocketConnectingStatusEnum.ERROR);
-			}
+
+			this.onDirectConnectionChange(deviceId, ConnectingStatusEnum.FAILED);
 			console.error("Cannot connect local webserver, check if tis enabled at Your arduino")
 		});
 	}
 
+	onOpenDirectConnection(deviceId,event) {
+		console.info(`direct connection opened for deviceid : ${deviceId}`);
+		this.directWebSocket[deviceId].send(thisDeviceId+"");
+		console.info(`direct connect for device ${deviceId}`);
+		this.onDirectConnectionChange(deviceId,ConnectingStatusEnum.CONNECTED);
+	}
 
+	onCloseDirectConnection(deviceId,event) {
+		console.info(`removed direct conenction for id ${deviceId}`);
+		this.directWebSocket.splice(deviceId,1);
+		console.info(this.directWebSocket);
+	}
+
+
+	getDirectConnected(){
+		var ret=[];
+		this.directWebSocket.forEach(device=> {
+			ret.push(	device.deviceId);
+
+		});
+		console.info(ret);
+		return ret;
+	}
+
+
+	onDirectConnectionChange(deviceId,status/*:ConnectingStatusEnum*/){
+
+		console.info(`onDirectConnectionChange ${deviceId}  ${status}`);
+
+		if (typeof this.remoteMeConfig.directConnectionChange=='function'){
+			this.remoteMeConfig.directConnectionChange(status,deviceId);
+		}else{
+			this.remoteMeConfig.directConnectionChange.forEach(f=>f(status,deviceId));
+		}
+
+
+	}
+
+	onWebSocketConnectionChange(status/*:ConnectingStatusEnum*/){
+		console.info(`onWebSocketConnectionChange  ${status}`);
+		if (typeof this.remoteMeConfig.directConnectionChange=='function'){
+			this.remoteMeConfig.webSocketConnectionChange(status);
+		}else {
+			this.remoteMeConfig.webSocketConnectionChange.forEach(f => f(status));
+		}
+	}
+
+	onWebRtcConnectionChange(status/*:ConnectingStatusEnum*/){
+		if (raspberryPiDeviceId!=undefined) {
+			console.info(`onWebRtcConnectionChange ${deviceId}`);
+			if (typeof this.remoteMeConfig.directConnectionChange=='function'){
+				this.remoteMeConfig.webRTCConnectionChange(status);
+			}else {
+				this.remoteMeConfig.webRTCConnectionChange.forEach(f => f(status));
+			}
+			this.sendWebRTCConnectionStatusChangeMessage(thisDeviceId, raspberryPiDeviceId, status);
+		}
+	}
 }
 
 

@@ -2,7 +2,41 @@
 var id=0;
 var otChange= new OperationTimer(200);
 
+$.fn.extend({
+	animateCss: function(animationName,infinitive=false, callback) {
+		if (this.clean!=undefined){
+			this.clean();
+		}
 
+		var animationEnd = (function(el) {
+			var animations = {
+				animation: 'animationend',
+				OAnimation: 'oAnimationEnd',
+				MozAnimation: 'mozAnimationEnd',
+				WebkitAnimation: 'webkitAnimationEnd',
+			};
+
+			for (var t in animations) {
+				if (el.style[t] !== undefined) {
+					return animations[t];
+				}
+			}
+		})(document.createElement('div'));
+
+		var classToAdd = 'animated ' + animationName+(infinitive?' animation-iteration-count: infinite':'');
+		this.clean=()=>{
+			$(this).removeClass(classToAdd);
+			this.clean=undefined;
+		};
+
+		this.addClass(classToAdd).one(animationEnd, function() {
+			$(this).removeClass(classToAdd);
+			if (typeof callback === 'function') callback();
+		});
+
+		return this;
+	},
+});
 class Touch{
 
 	constructor(selector,xRange,yRange,onMove) {
@@ -735,10 +769,96 @@ function addJoystick(selector){
 
 }
 
+function getOnConnectionChange(cnt,icon){
+	return (status)=>{
+		cnt.removeClass();
+		if (status==ConnectingStatusEnum.CONNECTING){
+			icon.addClass("connecting");
+			icon.animateCss("pulseMore",true);
+		}else if (status==ConnectingStatusEnum.CONNECTED){
+			cnt.addClass("connected");
+			icon.animateCss("rubberBandMore");
+		}else if (status==ConnectingStatusEnum.DISCONNECTED){
+			cnt.addClass("disconnected");
+			icon.animateCss("zoomOut");
+		}else if (status==ConnectingStatusEnum.FAILED){
+			cnt.addClass("failed");
+			icon.animateCss("shake",true);
+		}else if (status==ConnectingStatusEnum.DISCONNECTING){
+			cnt.addClass("disconnecting");
+			icon.animateCss("pulseMore",true);
+		}else if (status==ConnectingStatusEnum.CHECKING){
+			cnt.addClass("checking");
+			iicon.animateCss("pulseMore",true);
+		}
+	}
+}
+function addconnectionStatus(selector){
+
+
+	let webSocket=false;
+	let directConnection=false;
+	let camera=false;
+
+	if ($(selector).attr("webSocket") != undefined) {
+		webSocket=$(selector).attr("webSocket") =="true";
+	}
+
+	if ($(selector).attr("directConnection") != undefined) {
+		directConnection=$(selector).attr("directConnection") =="true";
+	}
+
+	if ($(selector).attr("camera") != undefined) {
+		camera=$(selector).attr("camera") =="true";
+	}
+
+
+	var box= $(`<div class='statusIcons'></div>`);
+
+	if (webSocket){
+
+		let icon =$(`<i class='material-icons'>cloud_done</i>`);
+		let cnt =$(`<div class='disconnected'></div>`);
+		icon.click(remoteme.onOffWebSocket.bind(remoteme));
+		cnt.append(icon);
+		box.append(cnt);
+		remoteme.remoteMeConfig.webSocketConnectionChange.push(getOnConnectionChange(cnt,icon));
+	}
+
+	if (directConnection){
+		let icon =$(`<i class='material-icons'>link</i>`);
+		let cnt =$(`<div class='disconnected'></div>`);
+		icon.click(remoteme.onOffDirectConnection.bind(remoteme));
+
+		cnt.append(icon);
+		box.append(cnt);
+		remoteme.remoteMeConfig.directConnectionChange.push(getOnConnectionChange(cnt,icon));
+	}
+
+	if (camera){
+
+		let icon =$(`<i class='material-icons'>videocam</i>`);
+		let cnt =$(`<div class='disconnected'></div>`);
+		icon.click(remoteme.onOffWebRTC.bind(remoteme));
+
+		cnt.append(icon);
+		box.append(cnt);
+		remoteme.remoteMeConfig.webRtcConnectionChange.push(getOnConnectionChange(cnt,icon));
+	}
+
+
+	replaceComponent(selector,box);
+
+
+}
 
 function replace(){
 	var variables=$("variable");
-	for(var i=0;i<variables.length;i++){
+	var connectionStatus=$("connectionstatus");
+	for(let i=0;i<connectionStatus.length;i++){
+		addconnectionStatus(connectionStatus[i]);
+	}
+	for(let i=0;i<variables.length;i++){
 		variable=variables[i];
 		if ($(variable).attr( "type" ) =="BOOLEAN" && $(variable).attr( "component" ) =="button"){
 			addButton(variable);
@@ -796,15 +916,17 @@ function replace(){
 $( document ).ready(function() {
 	if (RemoteMe.thiz==undefined){
 		remoteme = new RemoteMe();
+		remoteme.directWebSocketConnectionConnect();
 	}
 	replace();
-	if (doNotCreateRemoteMe!=undefined && doNotCreateRemoteMe==true){
+	if (typeof doNotCreateRemoteMe  !== 'undefined' && doNotCreateRemoteMe==true){
 		remoteme.sendDirectWebsocket=()=>{};
 		remoteme.sendRest=()=>{};
 		remoteme.sendWebSocketText=()=>{};
 		remoteme.sendWebRtc=()=>{};
 		remoteme.sendWebSocket=()=>{};
-
+		remoteme.directWebSocketConnectionConnect=()=>{};
+		remoteme.connectWebSocket=()=>{};
 
 	}
 
