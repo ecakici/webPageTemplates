@@ -1,0 +1,102 @@
+html{
+    height: inherit;
+}
+body {
+    font-family: Roboto,"Helvetica Neue",sans-serif;
+    max-width: 1024px;
+    margin: 0 auto !important;
+    float: none !important;
+}
+
+.container {
+    width: calc(100% - 20px);
+    margin-left: 10px;
+    margin-rihgt: 10px;
+    margin-top: 10px;
+}
+
+.paymentContainer {
+    width: 100%;
+
+}
+
+.paymentContainer .ldContainer {
+    float: left;
+    width: calc(100% - 100px);
+    float: left;
+    text-align: left;
+    margin-top:5px;
+    margin-bottom:5px;
+}
+
+.paymentContainer .ldContainer .label {
+    display: block;
+    width:100%;
+    font-weight: bold;
+    font-size: 120%;
+    letter-spacing: 1pt;
+}
+
+.paymentContainer .ldContainer .description {
+    display: block;
+    width:100%;
+    font-size: 80%;
+}
+
+.paymentContainer .label{
+    margin-top:5px;
+    margin-bottom:5px;
+    letter-spacing: 1pt;
+}
+.paymentContainer .pContainer {
+    float: right;
+    width:100px;
+    margin-top:5px;
+    margin-bottom:5px;
+    text-align: right;
+
+}
+
+.paymentContainer .pContainer .payment {
+
+    font-size: 120%;
+    font-weight: bold;
+}
+.paymentContainer .pContainer .currency {
+
+    font-size: 80%;
+    vertical-align: middle;
+}
+.payButton {
+
+     background-color: #14a76c;
+     color:white;
+     border-radius: 10px;
+     width: 100%;
+     margin-bottom: 10px;
+     height: inherit;
+     line-height:normal;
+     text-transform:none;
+ }
+
+.payButton:hover {
+    color: #189358;
+}
+
+#confirmButton{
+    color:white;
+    background-color: #14a76c;
+    width:100%;
+    font-weight: bold;
+}
+#confirmButton:disabled{
+    color:white !important;
+    background-color: rgba(13, 105, 64, 0.38) !important;
+    width:100%;
+    font-weight: bold;
+}
+
+#confirmButton:hover {
+    color: #189358;
+    background-color: #ececec;
+}
